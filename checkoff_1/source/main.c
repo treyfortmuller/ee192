@@ -1,4 +1,6 @@
 /*
+ * EE192 Checkoff 1: blink an LED at 1Hz with 75% duty cycle, and output Hello Word to the serial console.
+ *
  * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
@@ -30,6 +32,7 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 /*System includes.*/
@@ -59,7 +62,7 @@
 /* Get source clock for PIT driver */
 #define PIT_SOURCE_CLOCK CLOCK_GetFreq(kCLOCK_BusClk)
 volatile bool pitIsrFlag = false;
-volatile uint32_t systime = 0; //systime updated very 100 us = 4 days ==> NEED OVERFLOW protection
+volatile uint32_t systime = 0; //systime updated every .25s
 
 /*******************************************************************************
  * Code
@@ -68,69 +71,60 @@ volatile uint32_t systime = 0; //systime updated very 100 us = 4 days ==> NEED O
 /*!
  * @brief Main function
  */
-int main(void)
-{	float pif = 3.14159;
-	double pid = 3.14159;
+int main(void) {
+	// Configure an output pin with initial value 0
+	gpio_pin_config_t gpio_config = { kGPIO_DigitalOutput, 0, };
 
-    // Configure an output pin with initial value 0
-    gpio_pin_config_t gpio_config = {
-                kGPIO_DigitalOutput, 0,
-            };
+	/* Structure of initialize PIT (periodic interrupt timer) */
+	pit_config_t pitConfig;
 
-   /* Structure of initialize PIT (periodic interrupt timer) */
-    pit_config_t pitConfig;
+	BOARD_InitPins();
+	BOARD_BootClockRUN();
+	BOARD_InitDebugConsole();
 
-    BOARD_InitPins();
-    BOARD_BootClockRUN();
-    BOARD_InitDebugConsole();
+	asm (".global _printf_float");
+	// cause linker to include floating point
 
-    asm (".global _printf_float"); // cause linker to include floating point
+	/* initialize GPIO Pin */
+	GPIO_PinInit(GPIO_CHANNEL, GPIO_PIN_NUM, &gpio_config); // initialize GPIOB pin PTB23
 
-    /* initialize GPIO Pin */
-    GPIO_PinInit(GPIO_CHANNEL, GPIO_PIN_NUM, &gpio_config); // initialize GPIOB pin PTB23
-
-    /* initialize LEDs */
- 	//LED_GREEN_INIT(LOGIC_LED_OFF);
-
-    /* welcome messages */
-	PRINTF("Floating Point PRINTF %8.4f  %8.4lf\n\r", pif, pid); //print to UART (serial)
+	/* welcome messages */
 	PRINTF("Hello World\n"); //print to UART (serial)
 
-	// Comment this out for release or it will not work!!!
-	//	printf("Floating point printf %8.4f  %8.4lf\n\r", pif, pid); //print to semihost(debug console)
-
 	/* start periodic interrupt timer- should be in its own file */
- 	PIT_GetDefaultConfig(&pitConfig);
- 	    /* Init pit module */
- 	    PIT_Init(PIT, &pitConfig);
- 	    /* Set timer period for channel 0 */
+	PIT_GetDefaultConfig(&pitConfig);
+	/* Init pit module */
+	PIT_Init(PIT, &pitConfig);
+	/* Set timer period for channel 0 */
 
+	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0,
+			USEC_TO_COUNT(250000U, PIT_SOURCE_CLOCK)); // 0.25s timing
+	/* Enable timer interrupts for channel 0 */
+	PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
+	/* Enable at the NVIC */
+	EnableIRQ(PIT_IRQ_ID);
+	/* Start channel 0 */
+	PRINTF("\r\nStarting channel No.0 ...");
+	PIT_StartTimer(PIT, kPIT_Chnl_0);
 
- 	    PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(250000U, PIT_SOURCE_CLOCK)); // 0.25s timing
- 	    /* Enable timer interrupts for channel 0 */
- 	    PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
- 	    /* Enable at the NVIC */
- 	    EnableIRQ(PIT_IRQ_ID);
- 	    /* Start channel 0 */
- 	    PRINTF("\r\nStarting channel No.0 ...");
- 	    PIT_StartTimer(PIT, kPIT_Chnl_0);
-
-    for (;;);
+	for (;;);
 }
 
 /*******************************************************************************
  * Interrupt functions
  ******************************************************************************/
 
-void PIT0_IRQHandler(void)
-{
-    /* Clear interrupt flag.*/
-    PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
-    pitIsrFlag = true;
-    if (systime % 4 == 3) {
-    	GPIO_PortToggle(GPIO_CHANNEL, 1u << GPIO_PIN_NUM); //toggle off
-    } else if (systime % 4 == 0) {
-    	GPIO_PortToggle(GPIO_CHANNEL, 1u << GPIO_PIN_NUM); //toggle on
-    }
+void PIT0_IRQHandler(void) {
+	/* Clear interrupt flag.*/
+	PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
+	pitIsrFlag = true;
+
+	//	toggle the LED on 75% of the time, turn it off 25% of the time
+
+	if (systime % 4 == 3) {
+		GPIO_PortToggle(GPIO_CHANNEL, 1u << GPIO_PIN_NUM); //toggle off
+	} else if (systime % 4 == 0) {
+		GPIO_PortToggle(GPIO_CHANNEL, 1u << GPIO_PIN_NUM); //toggle on
+	}
 	systime++; /* hopefully atomic operation */
 }
