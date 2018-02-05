@@ -1,0 +1,17 @@
+FWD, RWD, or AWD Configuration for performance vehicles
+FWD:
+- understeer
+- torque steering
+- mechanically simple
+- more braking power with front axle because we brake with the motor
+
+RWD:
+- more acceleration off the line as weight shifts from front to back, the rear wheels gain traction
+- power can be used to break traction on the rear wheels in corners
+
+AWD:
+- no chance in slipping in full power in off the line acceleration
+- grip in corners is better
+- battery placement and CG managment becomes harder to deal with
+
+

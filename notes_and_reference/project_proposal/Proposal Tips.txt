@@ -1,0 +1,23 @@
+Project Proposal Tips from Varun
+
+Tips from Varun (Discussion):
+
+Essentials
+- camera
+- chasis/wheels
+- motor(s)
+- servo 
+- e-stop
+- battery/power system
+- front bumper
+Nice to Have
+- 2nd camera
+- speed sensor
+- telemetry/(bluetooth chip)
+Sensors
+- camera 
+- speed (encoder)
+- accelerometer
+Planning
+- which direction? (vision mapper)
+- what speed?
