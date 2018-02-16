@@ -1,6 +1,4 @@
-/* Checkoff 3, team 6
- *
- *
+/*
  * The Clear BSD License
 
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
@@ -74,12 +72,10 @@
  *
  */
 /* Get source clock for FTM driver */
-#define FTM_SOURCE_CLOCK CLOCK_GetFreq(kCLOCK_BusClk)
+#define FTM_SOURCE_CLOCK CLOCK_GetFreq(kCLOCK_FlexBusClk)
 
 //High Voltage(3.3V)=True for pwm
 #define PWM_LEVEL kFTM_HighTrue
-
-
 
 /*******************************************************************************
  * Prototypes
@@ -97,9 +93,11 @@ void init_pwm(uint32_t freq_hz, uint8_t init_duty_cycle);
 volatile bool ftmIsrFlag = false;
 volatile uint8_t duty_cycle = 1U;
 
-const int SERVO_DUTY_MIN = 50;
-const int SERVO_DUTY_CENTER = 75;
-const int SERVO_DUTY_MAX = 100;
+const int SERVO_DUTY_MIN = 0;
+const int SERVO_DUTY_MAX = 40;
+
+//const int SERVO_DUTY_MIN = 5;
+//const int SERVO_DUTY_MAX = 50;
 
 /*******************************************************************************
  * Code
@@ -177,35 +175,33 @@ void update_duty_cycle(uint8_t updated_duty_cycle)
 /*!
  * @brief Main function
  */
-int main(void) {
+int main(void)
+
+{
 	init_board();
-
-	//	init_pwm(20000, 0); //start 20kHz pwm at 0% duty cycle (for motor)
-	init_pwm(400, 75); //start 400Hz pwm at 75% duty cycle (for steering servo)
-
-	int duty_cycle = 75;
-
-	//  uint8_t i = 0;
+	init_pwm(10000, 0); //start 20khz pwm at 40% duty cycle
+	int duty_cycle = 0;
+//	init_pwm(500, 40); //start 20khz pwm at 40% duty cycle
+//	int duty_cycle = 25;
 	while (1) {
 		char ch = GETCHAR(); //read from serial terminal
 		if (ch == 'a') { //turn left
-			if (duty_cycle - 1 < 50) { //case where duty cycle falls below 50%
-				PRINTF("full left");
+			if (duty_cycle - 2 < SERVO_DUTY_MIN) { //case where duty cycle falls below 5%
 				duty_cycle = SERVO_DUTY_MIN;
 			} else {
-				update_duty_cycle(duty_cycle - 1); //subtract 1% from duty cycle
+				duty_cycle -= 2;
+				update_duty_cycle(duty_cycle); //subtract 1% from duty cycle
 			}
 		} else if (ch == 'd') { //turn right
-			if (duty_cycle + 1 > 99) { //case where duty cycle exceeds 99%
-				PRINTF("full right");
-				duty_cycle = SERVO_DUTY_RIGHT;
+			if (duty_cycle + 2 > SERVO_DUTY_MAX) { //case where duty cycle exceeds 50%
+				duty_cycle = SERVO_DUTY_MAX;
 			} else {
-				update_duty_cycle(duty_cycle + 1); //add 1% to duty cycle
+				duty_cycle += 2;
+				update_duty_cycle(duty_cycle); //add 1% to duty cycle
 			}
-		} else {
-			PRINTF("Command char not recognized.")
 		}
 	}
+}
 
 /*******************************************************************************
  * Interrupt functions
