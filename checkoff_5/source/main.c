@@ -1,36 +1,15 @@
 /*
- * The Clear BSD License
-
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
- * All rights reserved.
+ * CHECKOFF 5
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided
- * that the following conditions are met:
+ * Motor proportional controller uses optical encoder and an ADC
+ * for motor velocity sensing used in the feedback control.
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
+ * INPUTS:
+ * analog input from optical encoder board
+ * Speed command from serial console
  *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * OUTPUTS:
+ * PWM command output to motor control board
  */
 
 /*System includes.*/
@@ -49,7 +28,7 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-/* The Flextimer instance/channel used for board. Indicates pin PTC1, see pin view for more info */
+/* The Flex Timer Module (FTM) instance/channel used for board. Indicates pin PTC1, see pin view for more info */
 #define BOARD_FTM_BASEADDR FTM0
 #define BOARD_FTM_CHANNEL kFTM_Chnl_0
 
@@ -72,13 +51,11 @@
  * This example uses PWM @ 20khz so you can use any clock
  *
  */
-/* Get source clock for FTM driver */
+/* Get source clock for FTM driver, we're looking for ~400Hz PWM for the motor */
 #define FTM_SOURCE_CLOCK CLOCK_GetFreq(kCLOCK_FlexBusClk)
 
-//High Voltage(3.3V)=True for pwm
+// High Voltage(3.3V)=True for PWM
 #define PWM_LEVEL kFTM_HighTrue
-
-/* Checkoff 5 */
 
 #define DEMO_ADC16_BASEADDR ADC0
 #define DEMO_ADC16_CHANNEL_GROUP 0U
@@ -111,11 +88,9 @@ void read_ADC(void);
 volatile bool ftmIsrFlag = false;
 volatile uint8_t duty_cycle = 1U;
 
+/* PWM duty cycle percentage limits */
 const int SERVO_DUTY_MIN = 0; //
 const int SERVO_DUTY_MAX = 40;
-
-//const int SERVO_DUTY_MIN = 5;
-//const int SERVO_DUTY_MAX = 50;
 
 volatile bool g_Adc16ConversionDoneFlag = false;
 volatile uint32_t g_Adc16ConversionValue = 0;
@@ -162,6 +137,8 @@ void init_pwm(uint32_t freq_hz, uint8_t init_duty_cycle)
 /*******************************************************************************
  * Other Code
  ******************************************************************************/
+
+// TODO: add a comment, what delay is this specifically?
 void delay(void)
 {
     volatile uint32_t i = 0U;
