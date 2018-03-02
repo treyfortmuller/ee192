@@ -258,7 +258,7 @@ int main(void)
 	while (1) {
 
 		// print the systime so we can see it increment.
-		PRINTF("the systime is %d.", systime);
+		PRINTF("\r\n\r\nThe systime is %d\r\n", systime);
 
 		char ch = GETCHAR(); //read from serial terminal
 
