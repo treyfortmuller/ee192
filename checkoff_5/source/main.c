@@ -76,6 +76,7 @@
 void delay(void);
 void update_duty_cycle(uint8_t updated_duty_cycle);
 void init_pwm(uint32_t freq_hz, uint8_t init_duty_cycle);
+float getVelocity(int transition_count);
 
 /* Initialize ADC16 */
 static void ADC_Init(void);
@@ -93,9 +94,15 @@ volatile uint32_t systime = 0; // the timer for speed sensing through the optica
 const int SERVO_DUTY_MIN = 0; //
 const int SERVO_DUTY_MAX = 40;
 
+// ADC variables
 volatile bool g_Adc16ConversionDoneFlag = false;
 volatile uint32_t g_Adc16ConversionValue = 0;
 adc16_channel_config_t g_adc16ChannelConfigStruct;
+const float ADC_high_thresh = 2.5f; // the cutoff for a "high" signal from the optical encoder in volts
+float analog_voltage = 0;  // the voltage detected by the ADC from the optical encoder
+int ADC_state = 0; // whether the ADC is in a high or low state so we can count transitions
+int prev_ADC_state = 0; // the previous loop's ADC state for comparison
+int transition_count = 0; // the number of counts detected in the time step
 
 /*******************************************************************************
  * Code
@@ -240,15 +247,23 @@ void DEMO_ADC16_IRQ_HANDLER_FUNC(void)
 #endif
 }
 
-/*!
- * @brief Main function
- */
+float getVelocity(int transition_count) {
+	// TODO: implement this transformation: number of transitions from high to low signal off the ADC per 0.05s into vehicle velocity
+	// this function outputs a float, vehicle velocity to be used in the velocity controller
+
+	float counts_per_sec = transition_count / 0.05; // transitions per second
+	float revs_per_second = counts_per_sec / 4; // depending on the light and dark surfaces on the gearing
+
+	// SOME TRANSFORMATION USING GEAR RATIOS AND WHEEL DIAMETER GOES HERE
+
+	return 0.0f; // TODO: replace this placeholder
+}
+
 int main(void)
 
 {
 	init_board();
 	ADC_Init();
-	float analog_voltage;
 
 	init_pwm(10000, 0); //start 10khz pwm at 0% duty cycle
 	int duty_cycle = 0;
@@ -257,9 +272,12 @@ int main(void)
 
 	while (1) {
 
+<<<<<<< HEAD
 		// print the systime so we can see it increment.
 		PRINTF("\r\n\r\nThe systime is %d\r\n", systime);
 
+=======
+>>>>>>> 027fdea6b62ce070dce1509eb6da109682c2d088
 		char ch = GETCHAR(); //read from serial terminal
 
 		// TODO: This is the code for the servo, should be made more relevant to adjusting motor speeds
@@ -279,9 +297,29 @@ int main(void)
 			}
 		}
 
-        read_ADC();
-        analog_voltage = (float)(g_Adc16ConversionValue * (VREF_BRD / SE_12BIT));
-        PRINTF("\r\n\r\nADC Value: %d, ADC Voltage: %0.3f\r\n", g_Adc16ConversionValue, analog_voltage);
+		// read the ADC and see if there has been a transition
+		read_ADC();
+		analog_voltage = (float)(g_Adc16ConversionValue * (VREF_BRD / SE_12BIT)); // get the analog voltage off that pin
+		if (anaolog_voltage > ADC_high_thresh) {
+			ADC_state = 1; // the ADC detected a high signal off the optical encoder
+		}
+		else {
+			ADC_state = 0; // the ADC detected a low signla off the optical encoder
+		}
+
+		if (prev_ADC_state != ADC_state) {
+			// there has been a transition from high to low or low to high, increment the counter
+			transition_count++;
+		}
+
+		prev_ADC_state = ADC_state;
+
+		// at a frequency of 20Hz, return the number of transitions detected on the ADC to get velocity estimate
+		if (systime % 0.05 == 0) {
+			systime = 0; // reset the systime as to prevent overflow
+			getVelocity(transition_count); // get the velocity estimate from the number of transitions in 0.05s (20Hz) to use in our velocity controller
+			transition_count = 0; // reset the transition counter
+		}
 	}
 }
 
