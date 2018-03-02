@@ -87,6 +87,7 @@ void read_ADC(void);
  ******************************************************************************/
 volatile bool ftmIsrFlag = false;
 volatile uint8_t duty_cycle = 1U;
+volatile uint32_t systime = 0; // the timer for speed sensing through the optical encoder
 
 /* PWM duty cycle percentage limits */
 const int SERVO_DUTY_MIN = 0; //
@@ -176,7 +177,7 @@ static void ADC_Init(void)
 	EnableIRQ(DEMO_ADC16_IRQn);
     adc16_config_t adc16ConfigStruct;
 
-    /* Configure the ADC16. */
+    /* Configure the ADC16. All the default values follow, uncomment and adjust them if need be*/
     /*
      * adc16ConfigStruct.referenceVoltageSource = kADC16_ReferenceVoltageSourceVref;
      * adc16ConfigStruct.clockSource = kADC16_ClockSourceAsynchronousClock;
@@ -255,7 +256,13 @@ int main(void)
 //	int duty_cycle = 25;
 
 	while (1) {
+
+		// print the systime so we can see it increment.
+		PRINTF("the systime is %d.", systime);
+
 		char ch = GETCHAR(); //read from serial terminal
+
+		// TODO: This is the code for the servo, should be made more relevant to adjusting motor speeds
 		if (ch == 'a') { //turn left
 			if (duty_cycle - 2 < SERVO_DUTY_MIN) { //case where duty cycle falls below 5%
 				duty_cycle = SERVO_DUTY_MIN;
