@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding= "UTF-8" ?>
-<configuration name="MK64FN1M0xxx12" version="1.3" xsi:schemaLocation="http://mcuxpresso.nxp.com/XSD/mex_configuration_1.3 http://mcuxpresso.nxp.com/XSD/mex_configuration_1.3.xsd" uuid="7cb6d715-e854-4521-b191-134923f2f1ce" xmlns="http://mcuxpresso.nxp.com/XSD/mex_configuration_1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<configuration name="MK64FN1M0xxx12" version="1.3" xsi:schemaLocation="http://mcuxpresso.nxp.com/XSD/mex_configuration_1.3 http://mcuxpresso.nxp.com/XSD/mex_configuration_1.3.xsd" uuid="a10af854-ec63-42af-8d0f-68f99bd0251a" xmlns="http://mcuxpresso.nxp.com/XSD/mex_configuration_1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
    <common>
       <processor>MK64FN1M0xxx12</processor>
       <package>MK64FN1M0VLL12</package>
@@ -8,7 +8,7 @@
       <cores selected="core0">
          <core name="Cortex-M4F" id="core0" description="M4 core"/>
       </cores>
-      <description>Configuration imported from frdmk64f_skeletonrtos</description>
+      <description>Configuration imported from frdmk64f_adc</description>
    </common>
    <preferences>
       <validate_boot_init_only>true</validate_boot_init_only>
@@ -16,7 +16,7 @@
    <tools>
       <pins name="Pins" version="4.0" update_project_code="true">
          <pins_profile>
-            <processor_version>3.0.0</processor_version>
+            <processor_version>3.0.1</processor_version>
          </pins_profile>
          <functions_list>
             <function name="BOARD_InitPins">
@@ -27,6 +27,11 @@
                   <enableClock>true</enableClock>
                </options>
                <dependencies>
+                  <dependency resourceType="Peripheral" resourceId="FTM0" description="Peripheral FTM0 is not initialized" problem_level="1" source="Pins: BOARD_InitPins">
+                     <feature name="initialized" evaluation="">
+                        <data>true</data>
+                     </feature>
+                  </dependency>
                   <dependency resourceType="Peripheral" resourceId="GPIOE" description="Peripheral GPIOE is not initialized" problem_level="1" source="Pins: BOARD_InitPins">
                      <feature name="initialized" evaluation="">
                         <data>true</data>
@@ -38,6 +43,11 @@
                      </feature>
                   </dependency>
                   <dependency resourceType="Peripheral" resourceId="GPIOB" description="Peripheral GPIOB is not initialized" problem_level="1" source="Pins: BOARD_InitPins">
+                     <feature name="initialized" evaluation="">
+                        <data>true</data>
+                     </feature>
+                  </dependency>
+                  <dependency resourceType="Peripheral" resourceId="ADC0" description="Peripheral ADC0 is not initialized" problem_level="1" source="Pins: BOARD_InitPins">
                      <feature name="initialized" evaluation="">
                         <data>true</data>
                      </feature>
@@ -59,13 +69,16 @@
                   <pin peripheral="GPIOE" signal="GPIO, 26" pin_num="33" pin_signal="PTE26/ENET_1588_CLKIN/UART4_CTS_b/RTC_CLKOUT/USB_CLKIN"/>
                   <pin peripheral="GPIOB" signal="GPIO, 21" pin_num="67" pin_signal="PTB21/SPI2_SCK/FB_AD30/CMP1_OUT"/>
                   <pin peripheral="GPIOB" signal="GPIO, 22" pin_num="68" pin_signal="PTB22/SPI2_SOUT/FB_AD29/CMP2_OUT"/>
+                  <pin peripheral="FTM0" signal="CH, 0" pin_num="71" pin_signal="ADC0_SE15/PTC1/LLWU_P6/SPI0_PCS3/UART1_RTS_b/FTM0_CH0/FB_AD13/I2S0_TXD0"/>
+                  <pin peripheral="GPIOB" signal="GPIO, 23" pin_num="69" pin_signal="PTB23/SPI2_SIN/SPI0_PCS5/FB_AD28"/>
+                  <pin peripheral="ADC0" signal="SE, 12" pin_num="55" pin_signal="ADC0_SE12/PTB2/I2C0_SCL/UART0_RTS_b/ENET0_1588_TMR0/FTM0_FLT3"/>
                </pins>
             </function>
          </functions_list>
       </pins>
       <clocks name="Clocks" version="4.0" update_project_code="true">
          <clocks_profile>
-            <processor_version>3.0.0</processor_version>
+            <processor_version>3.0.1</processor_version>
          </clocks_profile>
          <clock_configurations>
             <clock_configuration name="BOARD_BootClockRUN">
@@ -176,77 +189,5 @@
             </clock_configuration>
          </clock_configurations>
       </clocks>
-      <periphs name="Peripherals" version="1.0" update_project_code="true">
-         <dependencies>
-            <dependency resourceType="SWComponent" resourceId="platform.drivers.ftm" description="FTM Driver not found in the toolchain/IDE project." problem_level="2" source="Peripherals">
-               <feature name="enabled" evaluation="equal">
-                  <data type="Boolean">true</data>
-               </feature>
-            </dependency>
-            <dependency resourceType="SWComponent" resourceId="platform.drivers.ftm" description="Unsupported version of the FTM Driver in the toolchain/IDE project. Required: ${required_value}, actual: ${actual_value}." problem_level="1" source="Peripherals">
-               <feature name="version" evaluation="compatible">
-                  <data type="Version">2.0.2</data>
-               </feature>
-            </dependency>
-         </dependencies>
-         <peripherals_profile>
-            <processor_version>3.0.0</processor_version>
-         </peripherals_profile>
-         <functional_groups>
-            <functional_group name="BOARD_InitPeripherals" called_from_default_init="true" id_prefix="" core="core0">
-               <description></description>
-               <options/>
-               <dependencies/>
-               <instances>
-                  <instance name="FTM_1" type="ftm" type_id="ftm_5e037045c21cf6f361184c371dbbbab2" mode="EdgeAligned" peripheral="FTM0" enabled="true">
-                     <config_set name="ftm_main_config" quick_selection="QuickSelectionDefault">
-                        <struct name="ftm_config">
-                           <setting name="clockSource" value="kFTM_SystemClock"/>
-                           <setting name="prescale" value="kFTM_Prescale_Divide_1"/>
-                           <setting name="timerFrequency" value="10000"/>
-                           <setting name="bdmMode" value="kFTM_BdmMode_0"/>
-                           <set name="pwmSyncMode">
-                              <selected>
-                                 <id>kFTM_SoftwareTrigger</id>
-                              </selected>
-                           </set>
-                           <set name="reloadPoints">
-                              <selected/>
-                           </set>
-                           <setting name="faultMode" value="kFTM_Fault_Disable"/>
-                           <setting name="faultFilterValue" value="0"/>
-                           <setting name="deadTimePrescale" value="kFTM_Deadtime_Prescale_1"/>
-                           <setting name="deadTimeValue" value="0"/>
-                           <set name="extTriggers">
-                              <selected/>
-                           </set>
-                           <set name="chnlInitState">
-                              <selected/>
-                           </set>
-                           <set name="chnlPolarity">
-                              <selected/>
-                           </set>
-                           <setting name="useGlobalTimeBase" value="false"/>
-                        </struct>
-                        <set name="timer_interrupts">
-                           <selected/>
-                        </set>
-                        <setting name="enable_irq" value="false"/>
-                        <struct name="ftm_interrupt">
-                           <setting name="IRQn" value="FTM0_IRQn"/>
-                           <setting name="enable_priority" value="false"/>
-                           <setting name="enable_custom_name" value="false"/>
-                        </struct>
-                        <setting name="EnableTimerInInit" value="true"/>
-                     </config_set>
-                     <config_set name="ftm_edge_aligned_mode">
-                        <array name="ftm_edge_aligned_channels_config"/>
-                     </config_set>
-                  </instance>
-               </instances>
-            </functional_group>
-         </functional_groups>
-         <components/>
-      </periphs>
    </tools>
 </configuration>
