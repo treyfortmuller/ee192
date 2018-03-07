@@ -179,24 +179,24 @@ int main(void)
 
 {
 	init_board();
-	init_pwm(10000, 0); //start 20khz pwm at 40% duty cycle
+	init_pwm(10000, 0); //start 10khz pwm at 0% duty cycle
 	int duty_cycle = 0;
-//	init_pwm(500, 40); //start 20khz pwm at 40% duty cycle
+//	init_pwm(500, 40); //start 500hz pwm at 40% duty cycle
 //	int duty_cycle = 25;
 	while (1) {
 		char ch = GETCHAR(); //read from serial terminal
 		if (ch == 'a') { //turn left
-			if (duty_cycle - 2 < SERVO_DUTY_MIN) { //case where duty cycle falls below 5%
+			if (duty_cycle - 5 < SERVO_DUTY_MIN) { //case where duty cycle falls below 5%
 				duty_cycle = SERVO_DUTY_MIN;
 			} else {
-				duty_cycle -= 2;
+				duty_cycle -= 5;
 				update_duty_cycle(duty_cycle); //subtract 1% from duty cycle
 			}
 		} else if (ch == 'd') { //turn right
-			if (duty_cycle + 2 > SERVO_DUTY_MAX) { //case where duty cycle exceeds 50%
+			if (duty_cycle + 5 > SERVO_DUTY_MAX) { //case where duty cycle exceeds 50%
 				duty_cycle = SERVO_DUTY_MAX;
 			} else {
-				duty_cycle += 2;
+				duty_cycle += 5;
 				update_duty_cycle(duty_cycle); //add 1% to duty cycle
 			}
 		}
