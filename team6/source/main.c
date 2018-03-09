@@ -58,6 +58,8 @@
 #define VREF_BRD 3.300
 #define SE_12BIT 4096.0
 
+#define frame_width 128 // frame width of the camera
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -73,6 +75,10 @@ float getVelocity(int transition_count);
 static void ADC_Init(void);
 static void init_board(void);
 void read_ADC(void);
+
+/* console based output of the track */
+void print_track_to_console(char track[5]);
+void set_output_track(int pos);
 
 /*******************************************************************************
  * Variables
@@ -99,6 +105,8 @@ float currVel = 0.0f; // current velocity
 int ADC_state = 0; // whether the ADC is in a high or low state so we can count transitions
 int prev_ADC_state = 0; // the previous loop's ADC state for comparison
 int transition_count = 0; // the number of counts detected in the time step
+
+char track[frame_width]; // the telemetry output representation of the detected track
 
 /*******************************************************************************
  * Code
@@ -259,6 +267,25 @@ float getVelocity(int transition_count) {
 	return velocity;
 }
 
+void set_output_track(int line_pos){
+	for (int i = 0; i <= frame_width; i++) {
+		if (i == line_pos) {
+			track[i] = '|';
+		}
+		else {
+			track[i] = '-';
+		}
+	}
+}
+
+void print_track_to_console(char track[5]){
+	PRINTF("\r\n");
+	for (int i = 0; i <= frame_width; i++) {
+		PRINTF("%c", track[i]);
+	}
+	PRINTF("\r\n");
+}
+
 int main(void)
 
 {
@@ -268,6 +295,8 @@ int main(void)
 	init_pwm(10000, 0); //start 10khz pwm at 0% duty cycle
 	int duty_cycle = 0;
 
+	int position = 64; //TODO: this is the fake result of the argmax over the camera frame
+
 //	init_pwm(500, 40); //start 500hz pwm at 40% duty cycle
 //	int duty_cycle = 25;
 
@@ -276,7 +305,13 @@ int main(void)
 		// print the systime so we can see it increment.
 		// PRINTF("\r\n\r\nThe systime is %d\r\n", systime);
 
-		char ch = GETCHAR(); //read from serial terminal
+		// get the track representation to show in telem, print it to the console
+		set_output_track(position);
+		print_track_to_console(track);
+
+		//TODO: THIS NEEDS TO BE UNCOMMENTED WHEN WE HAVE REAL PITs WORKING
+		//char ch = GETCHAR(); //read from serial terminal
+		char ch = 'g'; // arbitrary temporary choice
 		if (ch == 'a') { //decrease throttle
 			if (duty_cycle - 2 < MOTOR_DUTY_MIN) { //case where duty cycle falls below 0%
 				duty_cycle = MOTOR_DUTY_MIN;
