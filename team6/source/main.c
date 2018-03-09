@@ -322,24 +322,43 @@ void init_pit()
 //	return velocity;
 //}
 
-int *capture(void)
+void capture()
 {
     int i;
-    Max = 0, Min = 70000;
     SI_HIGH; //set SI to 1
     delay(1);
     CLK_HIGH; //set CLK to 1
     delay(1);
     SI_LOW; //set SI to 0
     for (i = 0; i < 127; i++) { //loop for 128 pixels
-        CLK_HIGH;
+    	CLK_LOW;
+    	CLK_HIGH;
         delay(1);
         read_ADC();
         picture[i] = g_Adc16ConversionValue; //store data in array
         CLK_LOW;
         delay(1);
     }
-    return picture;
+    CLK_HIGH;
+    delay(1);
+    CLK_LOW;
+    delay(1);
+}
+
+int argmax(int arr[], size_t size)
+{
+	/* enforce the contract */
+	assert(arr && size);
+	size_t i;
+	int maxValue = arr[0];
+	int temp = 0;
+	for (i = 1; i < size; ++i) {
+		if (arr[i] > maxValue) {
+			maxValue = arr[i];
+			temp = i;
+		}
+	}
+	return temp;
 }
 
 void set_output_track(int line_pos){
@@ -369,38 +388,20 @@ int main(void)
 	init_pit();
 //	init_pwm(10000, 0); //start 10khz pwm at 0% duty cycle, for motor drive
 //	int duty_cycle = 0;
-	init_pwm(500, 40); //start 500hz pwm at 40% duty cycle, for servo steer
-
-	int position = 64; //TODO: this is the fake result of the argmax over the camera frame
-
-	int duty_cycle = 25;
+	init_pwm(700, 75); //start 500hz pwm at 40% duty cycle, for servo steer
+	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
 
 	while (1) {
 
-        int *data = capture();
-//        int left = 0;
-//        int left_set = 0;
-//        int right = 0;
-//
-//        for (int i = 0; i < 125; i++) {
-//            int v = (data[i]/65535);
-//            if (v == 0 && !left_set) {
-//                left = i;
-//                left_set = 1;
-//            }
-//            if (v == 0) {
-//                right = i;
-//            }
-//        }
-//
-//        int max = (left + right)/2;
-//        //some stuff to calculate what to set the duty cycle to
-//        duty_cycle = 25; //20% - left = 1000, 28% - center, 36% - right = 1800
-//        if (max != 0) {
-//            update_duty_cycle(duty_cycle);
-//        }
+//		PRINTF("Camera: %d \n", data[45]);
 
-		PRINTF("Camera: %d \n", data[45]);
+		capture();
+		position = argmax(picture, 128);
+		set_output_track(position);
+		print_track_to_console(track);
+		duty_cycle = (uint8_t) 100 - 50*position/128;
+		update_duty_cycle(duty_cycle);
+		delay(10);
 
 //		print the systime so we can see it increment for debugging
 //		 PRINTF("\r\n\r\nThe systime is %d\r\n", systime);

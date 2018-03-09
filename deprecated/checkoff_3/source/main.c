@@ -94,7 +94,7 @@ volatile bool ftmIsrFlag = false;
 volatile uint8_t duty_cycle = 1U;
 
 const int SERVO_DUTY_MIN = 0;
-const int SERVO_DUTY_MAX = 40;
+const int SERVO_DUTY_MAX = 100;
 
 //const int SERVO_DUTY_MIN = 5;
 //const int SERVO_DUTY_MAX = 50;
