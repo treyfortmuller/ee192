@@ -18,4 +18,4 @@ plt.xlabel('time [s]')
 plt.ylabel('velocity [m/s]')  
 plt.plot(time,vel)
 
-plt.show()
+plt.show() 
