@@ -148,22 +148,32 @@ ax = plt.subplot(1, 1, 1)
 plot_gray(ax, linescans) 
 
 
-############# plot of velocities
+# plot of velocities
 fig = plt.figure(figsize = (8, 4))
-fig.set_size_inches(13, 4)
+# fig.set_size_inches(13, 4)
 fig.suptitle("velocities %s\n" % (filename))   
 plt.xlabel('time [ms]')
 plt.ylabel('velocity (m/s)')  
 plt.plot(times,velocities)
 
-###############plot of found track position 
+# plot of found track position 
 
 fig = plt.figure(figsize = (8, 4))
-fig.set_size_inches(13, 4)
+# fig.set_size_inches(13, 4)
 fig.suptitle("track center %s\n" % (filename))   
 plt.xlabel('time [ms]')
 plt.ylabel('track center')  
 plt.plot(times,track_center_list)
+
+# plot of an individual frame
+
+frame_number = 50
+fig = plt.figure(figsize = (8, 4))
+# fig.set_size_inches(13, 4)
+fig.suptitle("track center %d\n" % (frame_number))   
+plt.xlabel('pixel')
+plt.ylabel('intensity')  
+plt.plot(linescans[frame_number])
 
 plt.show() # show the plots
 
