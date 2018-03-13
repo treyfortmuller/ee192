@@ -22,7 +22,7 @@ plt.close("all")   # try to close all open figs
 
 # In[9]:
 
-# Graphing helper function
+# Graphing helper function, used in plot_frame function below
 def setup_graph(title='', x_label='', y_label='', fig_size=None):
     fig = plt.figure()
     if fig_size != None:
@@ -164,3 +164,7 @@ fig.suptitle("track center %s\n" % (filename))
 plt.xlabel('time [ms]')
 plt.ylabel('track center')  
 plt.plot(times,track_center_list)
+
+plt.show() # show the plots
+
+
