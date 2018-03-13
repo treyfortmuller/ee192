@@ -15,7 +15,7 @@
 # In[8]:
 
 import numpy as np
-#import scipy as sp
+from scipy import stats
 import matplotlib.pyplot as plt
 # import scipy.ndimage as ndi  # useful for 1d filtering functions
 plt.close("all")   # try to close all open figs
@@ -102,17 +102,42 @@ def find_track(linescans):
     track_center_list = n * [64]
     track_found_list = n * [True]
     cross_found_list = n * [False]
-    ### Code to be added here
-    ###
-    ###
     
+    ### Code to be added here
+    max_intensity = 0 # the max intensity value of all the frames
+    prev_track = 64 # the previous iteration's track index
+    
+    for i in range(0, n): # iterate through the whole track
+      track_detection_state = True
+
+      frame = linescans[i] # a single frame
+      frame_argmax = np.argmax(linescans[i]) # the argument of the maximum value of the frame
+      frame_max = frame[frame_argmax] # the maximum value of the frame
+
+      if frame_max > max_intensity:
+        max_intensity = frame_max
+
+      # we use the mode to gauge how different the detected spike is from it's surroundings (the mode)
+      frame_mode = stats.mode(frame)[0][0] # (scipy returns some other stuff after the mode)
+      
+      # if the frame max wasn't at least twice as big as the mode of the frame then we've lost the track
+      # or if the track location jumped more than 1/3 of the frame width, we've lost the track
+      if (frame_max * 0.5) < frame_mode or (frame_argmax - prev_track) > 43: 
+        track_detection_state = False
+        track_found_list[i] = track_detection_state
+
+      if (max_intensity * 0.3) < frame_mode:
+        cross_found_list[i] = True
+
+      if track_detection_state == True:
+        track_center_list[i] = frame_argmax # the center of the track is simply the argmax of the frame
+        prev_track = frame_argmax
+      else: # if the track isn't detected just use the previous iteration's value for the track index
+        track_center_list[i] = prev_track
+
     return track_center_list, track_found_list, cross_found_list
 
-
-
-
-################
-# need to use some different tricks to read csv file
+### IMPORT THE CSV FILE ###
 import csv
 filename = 'natcar2016_team1.csv'
 #filename = 'natcar2016_team1_short.csv'
@@ -130,15 +155,15 @@ for row in telemreader:
     line = row[1] # get scan data
     arrayline=np.array(eval(line)) # convert line to an np array
     linescans.append(arrayline)
-print 'scan line0:', linescans[0]
-print 'scan line1:', linescans[1]
+# print 'scan line0:', linescans[0]
+# print 'scan line1:', linescans[1]
 
 track_center_list, track_found_list, cross_found_list = find_track(linescans)
 #for i, (track_center, track_found, cross_found) in enumerate(zip(track_center_list, track_found_list, cross_found_list)):
 #    print 'scan # %d center at %d. Track_found = %s, Cross_found = %s' %(i,track_center,track_found, cross_found)
 
 
-############# plots ###########
+### PLOTS ###
 #fig=plt.figure()
 fig = plt.figure(figsize = (16, 3))
 fig.set_size_inches(13, 4)
@@ -157,7 +182,6 @@ plt.ylabel('velocity (m/s)')
 plt.plot(times,velocities)
 
 # plot of found track position 
-
 fig = plt.figure(figsize = (8, 4))
 # fig.set_size_inches(13, 4)
 fig.suptitle("track center %s\n" % (filename))   
@@ -165,15 +189,60 @@ plt.xlabel('time [ms]')
 plt.ylabel('track center')  
 plt.plot(times,track_center_list)
 
-# plot of an individual frame
-
-frame_number = 50
+# plot of track detection
 fig = plt.figure(figsize = (8, 4))
 # fig.set_size_inches(13, 4)
-fig.suptitle("track center %d\n" % (frame_number))   
-plt.xlabel('pixel')
-plt.ylabel('intensity')  
-plt.plot(linescans[frame_number])
+fig.suptitle("track detection %s\n" % (filename))   
+plt.xlabel('time [ms]')
+plt.ylabel('track detection')  
+plt.plot(times,track_found_list)
+
+# plot of crosses found
+fig = plt.figure(figsize = (8, 4))
+# fig.set_size_inches(13, 4)
+fig.suptitle("crosses found %s\n" % (filename))   
+plt.xlabel('time [ms]')
+plt.ylabel('crosses')  
+plt.plot(times,cross_found_list)
+
+### EXPERIMENTING WITH DIFFERENCING ###
+# plot of an individual frame (raw data)
+
+# frame_number = 50
+
+# # calculating the difference between the peak of the plot and the average
+# frame_avg = np.mean(linescans[frame_number])
+# frame_peak = np.max(linescans[frame_number])
+# peak_avg_diff = frame_peak - frame_avg
+
+# print 'raw peak - average = ', peak_avg_diff
+
+# fig = plt.figure(figsize = (8, 4))
+# fig.suptitle("track center %d\n" % (frame_number))   
+# plt.xlabel('pixel')
+# plt.ylabel('intensity')  
+# plt.plot(linescans[frame_number])
+
+# # plot of an individual frame with frame subtraction and peak detection
+
+# frame_avg = np.mean(linescans[frame_number])
+# result_frame = linescans[frame_number] - frame_avg
+
+# # calculating the difference between the peak of the plot and the average
+# result_peak = np.max(result_frame)
+# result_avg = np.mean(result_frame) 
+# peak_avg_diff = result_peak - result_avg
+
+# print 'resultant peak - average = ', peak_avg_diff
+
+# fig = plt.figure(figsize = (8, 4))
+# fig.suptitle("track center %d\n" % (frame_number))   
+# plt.xlabel('pixel')
+# plt.ylabel('intensity')
+# plt.plot(result_frame)
+
+### GET THE TRACK ###
+find_track(linescans)
 
 plt.show() # show the plots
 
