@@ -28,7 +28,7 @@
 
 /* Interrupt number and interrupt handler for the FTM instance used */
 #define FTM_INTERRUPT_NUMBER FTM0_IRQn
-#define FTM_0_HANDLER FTM0_IRQHandler
+//#define FTM_0_HANDLER FTM0_IRQHandler
 
 /* Interrupt to enable and flag to read; depends on the FTM channel used */
 #define FTM_CHANNEL_INTERRUPT_ENABLE_SERVO kFTM_Chnl0InterruptEnable // servo
@@ -49,7 +49,7 @@
  *
  */
 /* Get source clock for FTM driver, we're looking for ~400Hz PWM for the motor */
-#define FTM_SOURCE_CLOCK_SERVO CLOCK_GetFreq(kCLOCK_FlexBusClk) // servo (slow PWM)
+#define FTM_SOURCE_CLOCK_SERVO CLOCK_GetFreq(kCLOCK_BusClk) // servo (slow PWM)
 #define FTM_SOURCE_CLOCK_MOTOR CLOCK_GetFreq(kCLOCK_BusClk) // motor (high PWM)
 
 // High Voltage(3.3V)=True for PWM
@@ -113,10 +113,10 @@ volatile uint8_t duty_cycle = 1U;
 volatile uint32_t systime = 0; //systime updated very 100 us = 4 days ==> NEED OVERFLOW protection
 
 /* PWM duty cycle percentage limits */
-//const int MOTOR_DUTY_MIN = 0; // for motor drive
-//const int MOTOR_DUTY_MAX = 40;
-const int SERVO_DUTY_MIN = 0; // for servo steering
-const int SERVO_DUTY_MAX = 100;
+const int MOTOR_DUTY_MIN = 0; // for motor drive
+const int MOTOR_DUTY_MAX = 40;
+const int SERVO_DUTY_MIN = 50; // for servo steering
+const int SERVO_DUTY_MAX = 98;
 
 // ADC variables
 volatile bool g_Adc16ConversionDoneFlag = false;
@@ -163,16 +163,19 @@ void init_pwm_servo(uint32_t freq_hz, uint8_t init_duty_cycle)
     ftmParam.firstEdgeDelayPercent = 0U;
 
     FTM_GetDefaultConfig(&ftmInfo);
+    ftmInfo.prescale = kFTM_Prescale_Divide_128;
+    //set the prescaler to 128 to get very low frequencies of PWM reliably
+
     /* Initialize FTM module */
     FTM_Init(BOARD_FTM_BASEADDR, &ftmInfo);
 
     FTM_SetupPwm(BOARD_FTM_BASEADDR, &ftmParam, 1U, kFTM_CenterAlignedPwm, freq_hz, FTM_SOURCE_CLOCK_SERVO);
 
     /* Enable channel interrupt flag.*/
-    FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
+//    FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
 
     /* Enable at the NVIC */
-    EnableIRQ(FTM_INTERRUPT_NUMBER);
+//    EnableIRQ(FTM_INTERRUPT_NUMBER);
 
     FTM_StartTimer(BOARD_FTM_BASEADDR, kFTM_SystemClock);
 }
@@ -196,10 +199,10 @@ void init_pwm_motor(uint32_t freq_hz, uint8_t init_duty_cycle)
     FTM_SetupPwm(BOARD_FTM_BASEADDR, &ftmParam, 1U, kFTM_CenterAlignedPwm, freq_hz, FTM_SOURCE_CLOCK_MOTOR);
 
     /* Enable channel interrupt flag.*/
-    FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
+//    FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
 
     /* Enable at the NVIC */
-    EnableIRQ(FTM_INTERRUPT_NUMBER);
+//    EnableIRQ(FTM_INTERRUPT_NUMBER);
 
     FTM_StartTimer(BOARD_FTM_BASEADDR, kFTM_SystemClock);
 }
@@ -231,7 +234,7 @@ void delay (uint32_t t) {
 
 void update_duty_cycle_servo(uint8_t updated_duty_cycle)
 {
-	FTM_DisableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
+//	FTM_DisableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
 
 	/* Disable channel output before updating the dutycycle */
 	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_SERVO, 0U);
@@ -249,12 +252,12 @@ void update_duty_cycle_servo(uint8_t updated_duty_cycle)
 	// delay(); //Can be removed when using PWM for realtime applications
 
 	/* Enable interrupt flag to update PWM dutycycle */
-	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
+//	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
 }
 
 void update_duty_cycle_motor(uint8_t updated_duty_cycle)
 {
-	FTM_DisableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
+//	FTM_DisableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
 
 	/* Disable channel output before updating the dutycycle */
 	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_MOTOR, 0U);
@@ -272,7 +275,7 @@ void update_duty_cycle_motor(uint8_t updated_duty_cycle)
 	// delay(); //Can be removed when using PWM for realtime applications
 
 	/* Enable interrupt flag to update PWM dutycycle */
-	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
+//	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
 }
 
 static void init_adc(void)
@@ -354,7 +357,7 @@ void init_pit()
 	PIT_Init(PIT, &pitConfig);
 	/* Set timer period for channel 0 */
 
-	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(50U, PIT_SOURCE_CLOCK)); // 50us timing
+	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(5000000U, PIT_SOURCE_CLOCK)); // 5s timing
 	/* Enable timer interrupts for channel 0 */
 	PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
 	/* Enable at the NVIC */
@@ -440,55 +443,60 @@ void print_track_to_console(char track[5]){
 int main(void)
 {
 	init_board();
-	init_adc();
-	init_gpio();
+//	init_adc();
+//	init_gpio();
 	init_pit();
 	init_pwm_servo(700, 75); //start 500hz pwm at 40% duty cycle, for servo steer
-	init_pwm_motor(10000, 0); //start 10khz pwm at 0% duty cycle, for motor drive
-	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
+	uint8_t servo_duty_cycle = 75;
+	init_pwm_motor(1000, 0); //start 10khz pwm at 0% duty cycle, for motor drive
+	uint8_t motor_duty_cycle = 0; //initialize motor duty cycle variable
+//	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
 
 	while (1) {
 
+		delay(1); //10 second delay
+		update_duty_cycle_motor(20U); //start motor
+
 //		PRINTF("Camera: %d \n", data[45]);
-		capture();
-		position = argmax(picture, 128);
-		set_output_track(position);
-		print_track_to_console(track);
-		servo_duty_cycle = (uint8_t) 100 - 50*position/128;  //TODO: verify if we have to initialize servo_duty_cycle since we renamed it from duty_cycle
-		update_duty_cycle_servo(servo_duty_cycle);
-		delay(10);
+//		capture();
+//		position = argmax(picture, 128);
+//		set_output_track(position);
+//		print_track_to_console(track);
+//		servo_duty_cycle = (uint8_t) 100 - 50*position/128;  //TODO: verify if we have to initialize servo_duty_cycle since we renamed it from duty_cycle
+//		update_duty_cycle_servo(servo_duty_cycle);
+//		delay(10);
 
 //		print the systime so we can see it increment for debugging
 //		 PRINTF("\r\n\r\nThe systime is %d\r\n", systime);
 
 //		char ch = GETCHAR(); //read from serial terminal
 //		if (ch == 's') { //decrease throttle
-//			if (duty_cycle - 2 < MOTOR_DUTY_MIN) { //case where duty cycle falls below 0%
-//				duty_cycle = MOTOR_DUTY_MIN;
+//			if (motor_duty_cycle - 2 < MOTOR_DUTY_MIN) { //case where duty cycle falls below 0%
+//				motor_duty_cycle = MOTOR_DUTY_MIN;
 //			} else {
-//				duty_cycle -= 2;
-//				update_duty_cycle(duty_cycle); //subtract 2% from duty cycle
+//				motor_duty_cycle -= 2;
+//				update_duty_cycle_motor(motor_duty_cycle); //subtract 2% from duty cycle
 //			}
 //		} else if (ch == 'w') { //increase throttle
-//			if (duty_cycle + 2 > MOTOR_DUTY_MAX) { //case where duty cycle exceeds 40%
-//				duty_cycle = MOTOR_DUTY_MAX;
+//			if (motor_duty_cycle + 2 > MOTOR_DUTY_MAX) { //case where duty cycle exceeds 40%
+//				motor_duty_cycle = MOTOR_DUTY_MAX;
 //			} else {
-//				duty_cycle += 2;
-//				update_duty_cycle(duty_cycle); //add 2% to duty cycle
+//				motor_duty_cycle += 2;
+//				update_duty_cycle_motor(motor_duty_cycle); //add 2% to duty cycle
 //			}
-//		if (ch == 'a') { //turn left
-//			if (duty_cycle - 2 < SERVO_DUTY_MIN) { //case where duty cycle falls below 0%
-//				duty_cycle = SERVO_DUTY_MIN;
+//		} else if (ch == 'a') { //turn left
+//			if (servo_duty_cycle - 2 < SERVO_DUTY_MIN) { //case where duty cycle falls below 50%
+//				servo_duty_cycle = SERVO_DUTY_MIN;
 //			} else {
-//				duty_cycle -= 2;
-//				update_duty_cycle(duty_cycle); //subtract 2% from duty cycle
+//				servo_duty_cycle -= 2;
+//				update_duty_cycle_servo(servo_duty_cycle); //subtract 2% from duty cycle
 //			}
 //		} else if (ch == 'd') { //turn right
-//			if (duty_cycle + 2 > SERVO_DUTY_MAX) { //case where duty cycle exceeds 40%
-//				duty_cycle = SERVO_DUTY_MAX;
+//			if (servo_duty_cycle + 2 > SERVO_DUTY_MAX) { //case where duty cycle exceeds 98%
+//				servo_duty_cycle = SERVO_DUTY_MAX;
 //			} else {
-//				duty_cycle += 2;
-//				update_duty_cycle(duty_cycle); //add 2% to duty cycle
+//				servo_duty_cycle += 2;
+//				update_duty_cycle_servo(servo_duty_cycle); //add 2% to duty cycle
 //			}
 //		}
 
@@ -529,20 +537,37 @@ int main(void)
 /*******************************************************************************
  * Interrupt functions
  ******************************************************************************/
-// Just clears the status flag. More functionality could be added here
-void FTM_0_HANDLER(void)
-{
-    ftmIsrFlag = true;
-    if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG) == FTM_CHANNEL_FLAG)
-    {
-        /* Clear interrupt flag.*/
-        FTM_ClearStatusFlags(BOARD_FTM_BASEADDR, FTM_CHANNEL_FLAG);
-    }
-}
+// NOT NEEDED!!
+// Just clears the status flag. More functionality could be added here.
+//void FTM_0_HANDLER(void)
+//{
+//    ftmIsrFlag = true;
+//    if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG_SERVO) == FTM_CHANNEL_FLAG_SERVO)
+//    {
+//        /* Clear interrupt flag.*/
+//        FTM_ClearStatusFlags(BOARD_FTM_BASEADDR, FTM_CHANNEL_FLAG_SERVO);
+//    }
+//    if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG_MOTOR) == FTM_CHANNEL_FLAG_MOTOR)
+//    {
+//        /* Clear interrupt flag.*/
+//        FTM_ClearStatusFlags(BOARD_FTM_BASEADDR, FTM_CHANNEL_FLAG_MOTOR);
+//    }
+//}
 
 void PIT0_IRQHandler(void) //clear interrupt flag
 {
-	systime++; /* hopefully atomic operation */
     PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
     pitIsrFlag = true;
+	if (systime % 4 == 1) {
+		update_duty_cycle_servo(95U); //turn right
+	} else if (systime % 4 == 2) {
+		update_duty_cycle_servo(75U); //go straight
+	} else if (systime % 4 == 3) {
+		update_duty_cycle_servo(50U); //turn left
+	} else if (systime % 4 == 4) {
+		update_duty_cycle_servo(75U); //go straight
+	} else if (systime == 30) {
+		update_duty_cycle_motor(0U); //stop after 150 seconds
+	}
+    systime++; /* hopefully atomic operation */
 }
