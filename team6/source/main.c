@@ -23,6 +23,7 @@
  ******************************************************************************/
 /* The Flex Timer Module (FTM) instance/channel used for board. See pin view or open declaration for more info */
 #define BOARD_FTM_BASEADDR FTM0
+//#define BOARD_FTM_BASEADDR_MOTOR FTM2
 #define BOARD_FTM_CHANNEL_SERVO kFTM_Chnl_0 // pin PTC1, servo PWM
 #define BOARD_FTM_CHANNEL_MOTOR kFTM_Chnl_3 // pin PTC4, motor PWM
 
@@ -115,8 +116,8 @@ volatile uint32_t systime = 0; //systime updated very 100 us = 4 days ==> NEED O
 /* PWM duty cycle percentage limits */
 const int MOTOR_DUTY_MIN = 0; // for motor drive
 const int MOTOR_DUTY_MAX = 40;
-const int SERVO_DUTY_MIN = 50; // for servo steering
-const int SERVO_DUTY_MAX = 98;
+const int SERVO_DUTY_MIN = 65; // for servo steering
+const int SERVO_DUTY_MAX = 85;
 
 // ADC variables
 volatile bool g_Adc16ConversionDoneFlag = false;
@@ -357,7 +358,7 @@ void init_pit()
 	PIT_Init(PIT, &pitConfig);
 	/* Set timer period for channel 0 */
 
-	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(5000000U, PIT_SOURCE_CLOCK)); // 5s timing
+	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(3000000U, PIT_SOURCE_CLOCK)); // 1s timing
 	/* Enable timer interrupts for channel 0 */
 	PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
 	/* Enable at the NVIC */
@@ -445,114 +446,25 @@ int main(void)
 	init_board();
 //	init_adc();
 //	init_gpio();
-	init_pit();
-	init_pwm_servo(700, 75); //start 500hz pwm at 40% duty cycle, for servo steer
+	init_pwm_servo(500, 75); //start 500hz pwm at 40% duty cycle, for servo steer
 	uint8_t servo_duty_cycle = 75;
-	init_pwm_motor(1000, 0); //start 10khz pwm at 0% duty cycle, for motor drive
+	//init_pwm_motor(500, 0); //start 10khz pwm at 0% duty cycle, for motor drive
 	uint8_t motor_duty_cycle = 0; //initialize motor duty cycle variable
 //	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
+	init_pit();
 
 	while (1) {
 
 		delay(1); //10 second delay
-		update_duty_cycle_motor(20U); //start motor
+		update_duty_cycle_motor(15U); //start motor
 
-//		PRINTF("Camera: %d \n", data[45]);
-//		capture();
-//		position = argmax(picture, 128);
-//		set_output_track(position);
-//		print_track_to_console(track);
-//		servo_duty_cycle = (uint8_t) 100 - 50*position/128;  //TODO: verify if we have to initialize servo_duty_cycle since we renamed it from duty_cycle
-//		update_duty_cycle_servo(servo_duty_cycle);
-//		delay(10);
-
-//		print the systime so we can see it increment for debugging
-//		 PRINTF("\r\n\r\nThe systime is %d\r\n", systime);
-
-//		char ch = GETCHAR(); //read from serial terminal
-//		if (ch == 's') { //decrease throttle
-//			if (motor_duty_cycle - 2 < MOTOR_DUTY_MIN) { //case where duty cycle falls below 0%
-//				motor_duty_cycle = MOTOR_DUTY_MIN;
-//			} else {
-//				motor_duty_cycle -= 2;
-//				update_duty_cycle_motor(motor_duty_cycle); //subtract 2% from duty cycle
-//			}
-//		} else if (ch == 'w') { //increase throttle
-//			if (motor_duty_cycle + 2 > MOTOR_DUTY_MAX) { //case where duty cycle exceeds 40%
-//				motor_duty_cycle = MOTOR_DUTY_MAX;
-//			} else {
-//				motor_duty_cycle += 2;
-//				update_duty_cycle_motor(motor_duty_cycle); //add 2% to duty cycle
-//			}
-//		} else if (ch == 'a') { //turn left
-//			if (servo_duty_cycle - 2 < SERVO_DUTY_MIN) { //case where duty cycle falls below 50%
-//				servo_duty_cycle = SERVO_DUTY_MIN;
-//			} else {
-//				servo_duty_cycle -= 2;
-//				update_duty_cycle_servo(servo_duty_cycle); //subtract 2% from duty cycle
-//			}
-//		} else if (ch == 'd') { //turn right
-//			if (servo_duty_cycle + 2 > SERVO_DUTY_MAX) { //case where duty cycle exceeds 98%
-//				servo_duty_cycle = SERVO_DUTY_MAX;
-//			} else {
-//				servo_duty_cycle += 2;
-//				update_duty_cycle_servo(servo_duty_cycle); //add 2% to duty cycle
-//			}
-//		}
-
-		// read the ADC and see if there has been a transition for velocity state estimation
-//		read_ADC();
-//		analog_voltage = (float)(g_Adc16ConversionValue * (VREF_BRD / SE_12BIT)); // get the analog voltage off that pin
-//		if (analog_voltage > ADC_high_thresh) {
-//			ADC_state = 1; // the ADC detected a high signal off the optical encoder
-//		}
-//		else {
-//			ADC_state = 0; // the ADC detected a low signal off the optical encoder
-//		}
-//
-//		if (prev_ADC_state != ADC_state) {
-//			// there has been a transition from high to low or low to high, increment the counter
-//			transition_count++;
-//		}
-//
-//		prev_ADC_state = ADC_state;
-//
-//		// at a frequency of 20Hz, return the number of transitions detected on the ADC to get velocity estimate
-//		if (systime*100 % 5 == 0) {
-//			systime = 0; // reset the systime as to prevent overflow
-//			currVel = getVelocity(transition_count); // get the velocity estimate from the number of transitions in 0.05s (20Hz) to use in our velocity controller
-//			// PRINTF("\r\nVelocity: %0.3f\r\n", currVel);
-//			transition_count = 0; // reset the transition counter
-//		}
-//
-//		// proportional control
-//		float error = desVel - currVel;
-//		if (error > 0.0) {
-//			duty_cycle = Kp*error;
-//			update_duty_cycle(duty_cycle);
-//		}
 	}
 }
 
 /*******************************************************************************
  * Interrupt functions
  ******************************************************************************/
-// NOT NEEDED!!
-// Just clears the status flag. More functionality could be added here.
-//void FTM_0_HANDLER(void)
-//{
-//    ftmIsrFlag = true;
-//    if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG_SERVO) == FTM_CHANNEL_FLAG_SERVO)
-//    {
-//        /* Clear interrupt flag.*/
-//        FTM_ClearStatusFlags(BOARD_FTM_BASEADDR, FTM_CHANNEL_FLAG_SERVO);
-//    }
-//    if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG_MOTOR) == FTM_CHANNEL_FLAG_MOTOR)
-//    {
-//        /* Clear interrupt flag.*/
-//        FTM_ClearStatusFlags(BOARD_FTM_BASEADDR, FTM_CHANNEL_FLAG_MOTOR);
-//    }
-//}
+
 
 void PIT0_IRQHandler(void) //clear interrupt flag
 {
@@ -560,12 +472,12 @@ void PIT0_IRQHandler(void) //clear interrupt flag
     pitIsrFlag = true;
 	if (systime % 4 == 1) {
 		update_duty_cycle_servo(95U); //turn right
-	} else if (systime % 4 == 2) {
-		update_duty_cycle_servo(75U); //go straight
+//	} else if (systime % 4 == 2) {
+//		update_duty_cycle_servo(75U); //go straight
 	} else if (systime % 4 == 3) {
-		update_duty_cycle_servo(50U); //turn left
-	} else if (systime % 4 == 4) {
-		update_duty_cycle_servo(75U); //go straight
+		update_duty_cycle_servo(55U); //turn left
+//	} else if (systime % 4 == 4) {
+//		update_duty_cycle_servo(75U); //go straight
 	} else if (systime == 30) {
 		update_duty_cycle_motor(0U); //stop after 150 seconds
 	}
