@@ -22,21 +22,17 @@
  * Definitions
  ******************************************************************************/
 /* The Flex Timer Module (FTM) instance/channel used for board. See pin view or open declaration for more info */
-#define BOARD_FTM_BASEADDR FTM0
-//#define BOARD_FTM_BASEADDR_MOTOR FTM2
+#define BOARD_FTM_BASEADDR_SERVO FTM0
+#define BOARD_FTM_BASEADDR_MOTOR FTM2
 #define BOARD_FTM_CHANNEL_SERVO kFTM_Chnl_0 // pin PTC1, servo PWM
-#define BOARD_FTM_CHANNEL_MOTOR kFTM_Chnl_3 // pin PTC4, motor PWM
-
-/* Interrupt number and interrupt handler for the FTM instance used */
-#define FTM_INTERRUPT_NUMBER FTM0_IRQn
-//#define FTM_0_HANDLER FTM0_IRQHandler
+#define BOARD_FTM_CHANNEL_MOTOR kFTM_Chnl_1 // pin PTB19, motor PWM
 
 /* Interrupt to enable and flag to read; depends on the FTM channel used */
 #define FTM_CHANNEL_INTERRUPT_ENABLE_SERVO kFTM_Chnl0InterruptEnable // servo
 #define FTM_CHANNEL_FLAG_SERVO kFTM_Chnl0Flag
 
-#define FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR kFTM_Chnl3InterruptEnable // motor
-#define FTM_CHANNEL_FLAG_MOTOR kFTM_Chnl3Flag
+#define FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR kFTM_Chnl1InterruptEnable // motor
+#define FTM_CHANNEL_FLAG_MOTOR kFTM_Chnl1Flag
 
 /* Get source clock for FTM driver */
 /* For slow PWM must pick a slow clock!!!!
@@ -111,13 +107,13 @@ void set_output_track(int pos);
  ******************************************************************************/
 volatile bool ftmIsrFlag = false;
 volatile uint8_t duty_cycle = 1U;
-volatile uint32_t systime = 0; //systime updated very 100 us = 4 days ==> NEED OVERFLOW protection
+volatile uint32_t systime = 0; // systime updated very 100 us = 4 days ==> NEED OVERFLOW protection
 
 /* PWM duty cycle percentage limits */
-const int MOTOR_DUTY_MIN = 0; // for motor drive
-const int MOTOR_DUTY_MAX = 40;
-const int SERVO_DUTY_MIN = 65; // for servo steering
-const int SERVO_DUTY_MAX = 85;
+//const int MOTOR_DUTY_MIN = 0; // for motor drive
+//const int MOTOR_DUTY_MAX = 40;
+//const int SERVO_DUTY_MIN = 65; // for servo steering
+//const int SERVO_DUTY_MAX = 85;
 
 // ADC variables
 volatile bool g_Adc16ConversionDoneFlag = false;
@@ -168,17 +164,11 @@ void init_pwm_servo(uint32_t freq_hz, uint8_t init_duty_cycle)
     //set the prescaler to 128 to get very low frequencies of PWM reliably
 
     /* Initialize FTM module */
-    FTM_Init(BOARD_FTM_BASEADDR, &ftmInfo);
+    FTM_Init(BOARD_FTM_BASEADDR_SERVO, &ftmInfo);
 
-    FTM_SetupPwm(BOARD_FTM_BASEADDR, &ftmParam, 1U, kFTM_CenterAlignedPwm, freq_hz, FTM_SOURCE_CLOCK_SERVO);
+    FTM_SetupPwm(BOARD_FTM_BASEADDR_SERVO, &ftmParam, 1U, kFTM_CenterAlignedPwm, freq_hz, FTM_SOURCE_CLOCK_SERVO);
 
-    /* Enable channel interrupt flag.*/
-//    FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
-
-    /* Enable at the NVIC */
-//    EnableIRQ(FTM_INTERRUPT_NUMBER);
-
-    FTM_StartTimer(BOARD_FTM_BASEADDR, kFTM_SystemClock);
+    FTM_StartTimer(BOARD_FTM_BASEADDR_SERVO, kFTM_SystemClock);
 }
 
 void init_pwm_motor(uint32_t freq_hz, uint8_t init_duty_cycle)
@@ -195,17 +185,11 @@ void init_pwm_motor(uint32_t freq_hz, uint8_t init_duty_cycle)
 
     FTM_GetDefaultConfig(&ftmInfo);
     /* Initialize FTM module */
-    FTM_Init(BOARD_FTM_BASEADDR, &ftmInfo);
+    FTM_Init(BOARD_FTM_BASEADDR_MOTOR, &ftmInfo);
 
-    FTM_SetupPwm(BOARD_FTM_BASEADDR, &ftmParam, 1U, kFTM_CenterAlignedPwm, freq_hz, FTM_SOURCE_CLOCK_MOTOR);
+    FTM_SetupPwm(BOARD_FTM_BASEADDR_MOTOR, &ftmParam, 1U, kFTM_CenterAlignedPwm, freq_hz, FTM_SOURCE_CLOCK_MOTOR);
 
-    /* Enable channel interrupt flag.*/
-//    FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
-
-    /* Enable at the NVIC */
-//    EnableIRQ(FTM_INTERRUPT_NUMBER);
-
-    FTM_StartTimer(BOARD_FTM_BASEADDR, kFTM_SystemClock);
+    FTM_StartTimer(BOARD_FTM_BASEADDR_MOTOR, kFTM_SystemClock);
 }
 
 void init_gpio()
@@ -235,48 +219,32 @@ void delay (uint32_t t) {
 
 void update_duty_cycle_servo(uint8_t updated_duty_cycle)
 {
-//	FTM_DisableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
-
 	/* Disable channel output before updating the dutycycle */
-	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_SERVO, 0U);
+	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR_SERVO, BOARD_FTM_CHANNEL_SERVO, 0U);
 
 	/* Update PWM duty cycle */
-	FTM_UpdatePwmDutycycle(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_SERVO, kFTM_CenterAlignedPwm, updated_duty_cycle);
+	FTM_UpdatePwmDutycycle(BOARD_FTM_BASEADDR_SERVO, BOARD_FTM_CHANNEL_SERVO, kFTM_CenterAlignedPwm, updated_duty_cycle);
 
 	/* Software trigger to update registers */
-	FTM_SetSoftwareTrigger(BOARD_FTM_BASEADDR, true);
+	FTM_SetSoftwareTrigger(BOARD_FTM_BASEADDR_SERVO, true);
 
 	/* Start channel output with updated dutycycle */
-	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_SERVO, PWM_LEVEL);
-
-	/* Delay to view the updated PWM dutycycle */
-	// delay(); //Can be removed when using PWM for realtime applications
-
-	/* Enable interrupt flag to update PWM dutycycle */
-//	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_SERVO);
+	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR_SERVO, BOARD_FTM_CHANNEL_SERVO, PWM_LEVEL);
 }
 
 void update_duty_cycle_motor(uint8_t updated_duty_cycle)
 {
-//	FTM_DisableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
-
 	/* Disable channel output before updating the dutycycle */
-	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_MOTOR, 0U);
+	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR_MOTOR, BOARD_FTM_CHANNEL_MOTOR, 0U);
 
 	/* Update PWM duty cycle */
-	FTM_UpdatePwmDutycycle(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_MOTOR, kFTM_CenterAlignedPwm, updated_duty_cycle);
+	FTM_UpdatePwmDutycycle(BOARD_FTM_BASEADDR_MOTOR, BOARD_FTM_CHANNEL_MOTOR, kFTM_CenterAlignedPwm, updated_duty_cycle);
 
 	/* Software trigger to update registers */
-	FTM_SetSoftwareTrigger(BOARD_FTM_BASEADDR, true);
+	FTM_SetSoftwareTrigger(BOARD_FTM_BASEADDR_MOTOR, true);
 
 	/* Start channel output with updated dutycycle */
-	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR, BOARD_FTM_CHANNEL_MOTOR, PWM_LEVEL);
-
-	/* Delay to view the updated PWM dutycycle */
-	// delay(); //Can be removed when using PWM for realtime applications
-
-	/* Enable interrupt flag to update PWM dutycycle */
-//	FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE_MOTOR);
+	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR_MOTOR, BOARD_FTM_CHANNEL_MOTOR, PWM_LEVEL);
 }
 
 static void init_adc(void)
@@ -358,7 +326,7 @@ void init_pit()
 	PIT_Init(PIT, &pitConfig);
 	/* Set timer period for channel 0 */
 
-	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(3000000U, PIT_SOURCE_CLOCK)); // 1s timing
+	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(50U, PIT_SOURCE_CLOCK)); // 50us timing
 	/* Enable timer interrupts for channel 0 */
 	PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
 	/* Enable at the NVIC */
@@ -444,20 +412,21 @@ void print_track_to_console(char track[5]){
 int main(void)
 {
 	init_board();
-//	init_adc();
-//	init_gpio();
-	init_pwm_servo(500, 75); //start 500hz pwm at 40% duty cycle, for servo steer
-	uint8_t servo_duty_cycle = 75;
-	//init_pwm_motor(500, 0); //start 10khz pwm at 0% duty cycle, for motor drive
-	uint8_t motor_duty_cycle = 0; //initialize motor duty cycle variable
-//	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
+	init_adc();
+	init_gpio();
 	init_pit();
+	init_pwm_servo(500, 75); //start 500hz pwm at 40% duty cycle, for servo steer
+	init_pwm_motor(1000, 10); //start 1khz pwm at 10% duty cycle, for motor drive
+	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
 
 	while (1) {
-
-		delay(1); //10 second delay
-		update_duty_cycle_motor(15U); //start motor
-
+		capture();
+		position = argmax(picture, 128);
+		set_output_track(position);
+		print_track_to_console(track);
+		duty_cycle = (uint8_t) 100 - 50*position/128;
+		update_duty_cycle_servo(duty_cycle);
+		delay(10);
 	}
 }
 
@@ -465,21 +434,37 @@ int main(void)
  * Interrupt functions
  ******************************************************************************/
 
-
 void PIT0_IRQHandler(void) //clear interrupt flag
 {
     PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
     pitIsrFlag = true;
-	if (systime % 4 == 1) {
-		update_duty_cycle_servo(95U); //turn right
-//	} else if (systime % 4 == 2) {
-//		update_duty_cycle_servo(75U); //go straight
-	} else if (systime % 4 == 3) {
-		update_duty_cycle_servo(55U); //turn left
-//	} else if (systime % 4 == 4) {
-//		update_duty_cycle_servo(75U); //go straight
-	} else if (systime == 30) {
-		update_duty_cycle_motor(0U); //stop after 150 seconds
-	}
+//    if (systime % 261 == 0){
+//    	SI_HIGH; //set SI to 1
+//    } else if (systime % 261 == 1) {
+//    	CLK_HIGH; //set CLK to 1
+//    } else if (systime % 261 == 2) {
+//    	SI_LOW; //set SI to 0
+//    } else if (systime % 261 > 2 && systime % 261 < 259) {
+//    	for (int i = 3, j = 0; i < 259 && j < 127; i++, j++) {
+//			if (i % 2 == 1) { //odd (first, since i starts at 3)
+//				CLK_HIGH;
+//			} else if (i % 2 == 2) { //even
+//				read_ADC();
+//				picture[j] = g_Adc16ConversionValue; //store data in array
+//				CLK_LOW;
+//			}
+//    	}
+//    } else if (systime % 261 == 259) {
+//    	CLK_HIGH;
+//    } else if (systime % 261 == 260) {
+//    	CLK_LOW;
+//    }
+//	if (systime % 4 == 1) {
+//		update_duty_cycle_servo(95U); //turn right
+//	} else if (systime % 4 == 3) {
+//		update_duty_cycle_servo(55U); //turn left
+//	} else if (systime == 30) {
+//		update_duty_cycle_motor(0U); //stop after 150 seconds
+//	}
     systime++; /* hopefully atomic operation */
 }
