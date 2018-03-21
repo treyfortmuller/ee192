@@ -103,6 +103,30 @@ void BOARD_InitBootPins(void);
 #define BOARD_INITPINS_LED_RED_NAME "LED_RED"            /*!<@brief Identifier name */
                                                          /* @} */
 
+/*! @name PORTB2 (number 55), J4[2]
+  @{ */
+#define BOARD_INITPINS_ADC0_SE12_PERIPHERAL ADC0    /*!<@brief Device name: ADC0 */
+#define BOARD_INITPINS_ADC0_SE12_SIGNAL SE          /*!<@brief ADC0 signal: SE */
+#define BOARD_INITPINS_ADC0_SE12_PORT PORTB         /*!<@brief PORT device name: PORTB */
+#define BOARD_INITPINS_ADC0_SE12_PIN 2U             /*!<@brief PORTB pin index: 2 */
+#define BOARD_INITPINS_ADC0_SE12_CHANNEL 12         /*!<@brief ADC0 SE channel: 12 */
+#define BOARD_INITPINS_ADC0_SE12_PIN_NAME ADC0_SE12 /*!<@brief Pin name */
+#define BOARD_INITPINS_ADC0_SE12_LABEL "J4[2]"      /*!<@brief Label */
+#define BOARD_INITPINS_ADC0_SE12_NAME "ADC0_SE12"   /*!<@brief Identifier name */
+                                                    /* @} */
+
+/*! @name PORTD3 (number 96), J2[10]
+  @{ */
+#define BOARD_INITPINS_UART2_TX_PERIPHERAL FTM3   /*!<@brief Device name: FTM3 */
+#define BOARD_INITPINS_UART2_TX_SIGNAL CH         /*!<@brief FTM3 signal: CH */
+#define BOARD_INITPINS_UART2_TX_PORT PORTD        /*!<@brief PORT device name: PORTD */
+#define BOARD_INITPINS_UART2_TX_PIN 3U            /*!<@brief PORTD pin index: 3 */
+#define BOARD_INITPINS_UART2_TX_CHANNEL 3         /*!<@brief FTM3 channel: 3 */
+#define BOARD_INITPINS_UART2_TX_PIN_NAME FTM3_CH3 /*!<@brief Pin name */
+#define BOARD_INITPINS_UART2_TX_LABEL "J2[10]"    /*!<@brief Label */
+#define BOARD_INITPINS_UART2_TX_NAME "UART2_TX"   /*!<@brief Identifier name */
+                                                  /* @} */
+
 /*!
  * @brief Configures pin routing and optionally pin electrical features.
  *

@@ -58,12 +58,21 @@
 volatile bool pitIsrFlag = false;
 
 /* ADC definitions s*/
-#define DEMO_ADC16_BASEADDR ADC0
-#define DEMO_ADC16_CHANNEL_GROUP 0U
-#define DEMO_ADC16_USER_CHANNEL 12U /* PTB2, ADC0_SE12 */
+// for line scan camera
+#define DEMO_ADC16_BASEADDR_CAM ADC0
+#define DEMO_ADC16_CHANNEL_GROUP_CAM 0U
+#define DEMO_ADC16_USER_CHANNEL_CAM1 12U /* PTB2, ADC0_SE12 */
 
-#define DEMO_ADC16_IRQn ADC0_IRQn
-#define DEMO_ADC16_IRQ_HANDLER_FUNC ADC0_IRQHandler
+#define DEMO_ADC16_IRQn_CAM ADC0_IRQn
+#define DEMO_ADC16_IRQ_HANDLER_FUNC_CAM ADC0_IRQHandler
+
+// for encoder
+#define DEMO_ADC16_BASEADDR_ENC ADC1
+#define DEMO_ADC16_CHANNEL_GROUP_ENC 1U
+#define DEMO_ADC16_USER_CHANNEL_ENC 14U /* PTB10, ADC1_SE14 */
+
+#define DEMO_ADC16_IRQn_ENC ADC1_IRQn
+#define DEMO_ADC16_IRQ_HANDLER_FUNC_ENC ADC1_IRQHandler
 
 #define VREF_BRD 3.300
 #define SE_12BIT 4096.0
@@ -94,9 +103,11 @@ void init_pwm_motor(uint32_t freq_hz, uint8_t init_duty_cycle);
 float getVelocity(int transition_count);
 
 /* Initialize ADC16 */
-static void init_adc(void);
+static void init_adc_cam(void);
+static void init_adc_enc(void);
 static void init_board(void);
-void read_ADC(void);
+void read_ADC_cam(void);
+void read_ADC_enc(void);
 
 /* console based output of the track */
 void print_track_to_console(char track[5]);
@@ -247,9 +258,9 @@ void update_duty_cycle_motor(uint8_t updated_duty_cycle)
 	FTM_UpdateChnlEdgeLevelSelect(BOARD_FTM_BASEADDR_MOTOR, BOARD_FTM_CHANNEL_MOTOR, PWM_LEVEL);
 }
 
-static void init_adc(void)
+static void init_adc_cam(void)
 {
-	EnableIRQ(DEMO_ADC16_IRQn);
+	EnableIRQ(DEMO_ADC16_IRQn_CAM);
     adc16_config_t adc16ConfigStruct;
 
     /* Configure the ADC16. All the default values follow, uncomment and adjust them if need be*/
@@ -269,12 +280,12 @@ static void init_adc(void)
 #if defined(BOARD_ADC_USE_ALT_VREF)
     adc16ConfigStruct.referenceVoltageSource = kADC16_ReferenceVoltageSourceValt;
 #endif
-    ADC16_Init(DEMO_ADC16_BASEADDR, &adc16ConfigStruct);
+    ADC16_Init(DEMO_ADC16_BASEADDR_CAM, &adc16ConfigStruct);
 
     /* Make sure the software trigger is used. */
-    ADC16_EnableHardwareTrigger(DEMO_ADC16_BASEADDR, false);
+    ADC16_EnableHardwareTrigger(DEMO_ADC16_BASEADDR_CAM, false);
 #if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && FSL_FEATURE_ADC16_HAS_CALIBRATION
-    if (kStatus_Success == ADC16_DoAutoCalibration(DEMO_ADC16_BASEADDR))
+    if (kStatus_Success == ADC16_DoAutoCalibration(DEMO_ADC16_BASEADDR_CAM))
     {
         PRINTF("\r\nADC16_DoAutoCalibration() Done.");
     }
@@ -285,7 +296,7 @@ static void init_adc(void)
 #endif /* FSL_FEATURE_ADC16_HAS_CALIBRATION */
 
     /* Prepare ADC channel setting */
-    g_adc16ChannelConfigStruct.channelNumber = DEMO_ADC16_USER_CHANNEL;
+    g_adc16ChannelConfigStruct.channelNumber = DEMO_ADC16_USER_CHANNEL_CAM1;
     g_adc16ChannelConfigStruct.enableInterruptOnConversionCompleted = true;
 
 #if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
@@ -293,9 +304,9 @@ static void init_adc(void)
 #endif /* FSL_FEATURE_ADC16_HAS_DIFF_MODE */
 }
 
-void read_ADC(void){
+void read_ADC_cam(void){
 	g_Adc16ConversionDoneFlag = false;
-	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR, DEMO_ADC16_CHANNEL_GROUP, &g_adc16ChannelConfigStruct);
+	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR_CAM, DEMO_ADC16_CHANNEL_GROUP_CAM, &g_adc16ChannelConfigStruct);
 
 	//Block until the ADC Conversion is finished
 	 while (!g_Adc16ConversionDoneFlag)
@@ -303,11 +314,79 @@ void read_ADC(void){
 	 }
 }
 
-void DEMO_ADC16_IRQ_HANDLER_FUNC(void)
+void DEMO_ADC16_IRQ_HANDLER_FUNC_CAM(void)
 {
     g_Adc16ConversionDoneFlag = true;
     /* Read conversion result to clear the conversion completed flag. */
-    g_Adc16ConversionValue = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR, DEMO_ADC16_CHANNEL_GROUP);
+    g_Adc16ConversionValue = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR_CAM, DEMO_ADC16_CHANNEL_GROUP_CAM);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+
+static void init_adc_enc(void)
+{
+	EnableIRQ(DEMO_ADC16_IRQn_ENC);
+    adc16_config_t adc16ConfigStruct;
+
+    /* Configure the ADC16. All the default values follow, uncomment and adjust them if need be*/
+    /*
+     * adc16ConfigStruct.referenceVoltageSource = kADC16_ReferenceVoltageSourceVref;
+     * adc16ConfigStruct.clockSource = kADC16_ClockSourceAsynchronousClock;
+     * adc16ConfigStruct.enableAsynchronousClock = true;
+     * adc16ConfigStruct.clockDivider = kADC16_ClockDivider8;
+     * adc16ConfigStruct.resolution = kADC16_ResolutionSE12Bit;
+     * adc16ConfigStruct.longSampleMode = kADC16_LongSampleDisabled;
+     * adc16ConfigStruct.enableHighSpeed = false;
+     * adc16ConfigStruct.enableLowPower = false;
+     * adc16ConfigStruct.enableContinuousConversion = false;
+     */
+
+    ADC16_GetDefaultConfig(&adc16ConfigStruct);
+#if defined(BOARD_ADC_USE_ALT_VREF)
+    adc16ConfigStruct.referenceVoltageSource = kADC16_ReferenceVoltageSourceValt;
+#endif
+    ADC16_Init(DEMO_ADC16_BASEADDR_ENC, &adc16ConfigStruct);
+
+    /* Make sure the software trigger is used. */
+    ADC16_EnableHardwareTrigger(DEMO_ADC16_BASEADDR_ENC, false);
+#if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && FSL_FEATURE_ADC16_HAS_CALIBRATION
+    if (kStatus_Success == ADC16_DoAutoCalibration(DEMO_ADC16_BASEADDR_ENC))
+    {
+        PRINTF("\r\nADC16_DoAutoCalibration() Done.");
+    }
+    else
+    {
+        PRINTF("ADC16_DoAutoCalibration() Failed.\r\n");
+    }
+#endif /* FSL_FEATURE_ADC16_HAS_CALIBRATION */
+
+    /* Prepare ADC channel setting */
+    g_adc16ChannelConfigStruct.channelNumber = DEMO_ADC16_USER_CHANNEL_ENC;
+    g_adc16ChannelConfigStruct.enableInterruptOnConversionCompleted = true;
+
+#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
+    g_adc16ChannelConfigStruct.enableDifferentialConversion = false;
+#endif /* FSL_FEATURE_ADC16_HAS_DIFF_MODE */
+}
+
+void read_ADC_enc(void){
+	g_Adc16ConversionDoneFlag = false;
+	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC, &g_adc16ChannelConfigStruct);
+
+	//Block until the ADC Conversion is finished
+	 while (!g_Adc16ConversionDoneFlag)
+	 {
+	 }
+}
+
+void DEMO_ADC16_IRQ_HANDLER_FUNC_ENC(void)
+{
+    g_Adc16ConversionDoneFlag = true;
+    /* Read conversion result to clear the conversion completed flag. */
+    g_Adc16ConversionValue = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC);
     /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
       exception return operation might vector to incorrect interrupt */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
@@ -335,21 +414,21 @@ void init_pit()
 	PIT_StartTimer(PIT, kPIT_Chnl_0);
 }
 
-//float getVelocity(int transition_count) {
-//	// number of transitions from high to low signal off the ADC per 0.05s into vehicle velocity
-//	// this function outputs a float, vehicle velocity to be used in the velocity controller
-//
-//	// float counts_per_sec = transition_count / 0.05; // transitions per second
-//	// float revs_per_second = counts_per_sec / 4; // depending on the light and dark surfaces on the gearing
-//
-//	// gear ratio is 1.65:1
-//	// wheel diameter is ~56mm = 0.056 m
-//
-//	// distance per tick = pi * diameter / (ticks per rev * gear ratio)
-//	// velocity = distance per tick / time elapsed
-//	float velocity = (0.056*3.14159265358979323846/(4*1.65))/0.05; // in [m/s]
-//	return velocity;
-//}
+float getVelocity(int transition_count) {
+	// number of transitions from high to low signal off the ADC per 0.05s into vehicle velocity
+	// this function outputs a float, vehicle velocity to be used in the velocity controller
+
+	// float counts_per_sec = transition_count / 0.05; // transitions per second
+	// float revs_per_second = counts_per_sec / 4; // depending on the light and dark surfaces on the gearing
+
+	// gear ratio is 1.65:1
+	// wheel diameter is ~56mm = 0.056 m
+
+	// distance per tick = pi * diameter / (ticks per rev * gear ratio)
+	// velocity = distance per tick / time elapsed
+	float velocity = (0.056*3.14159265358979323846/(4*1.65))/0.05; // in [m/s]
+	return velocity;
+}
 
 void capture()
 {
@@ -363,7 +442,7 @@ void capture()
     	CLK_LOW;
     	CLK_HIGH;
         delay(1);
-        read_ADC();
+        read_ADC_cam();
         picture[i] = g_Adc16ConversionValue; //store data in array
         CLK_LOW;
         delay(1);
@@ -412,12 +491,13 @@ void print_track_to_console(char track[5]){
 int main(void)
 {
 	init_board();
-	init_adc();
+	init_adc_cam();
+	init_adc_enc();
 	init_gpio();
 	init_pit();
 	init_pwm_servo(500, 75); //start 500hz pwm at 40% duty cycle, for servo steer
-	init_pwm_motor(1000, 10); //start 1khz pwm at 10% duty cycle, for motor drive
-	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
+	init_pwm_motor(1000, 15); //start 1khz pwm at 10% duty cycle, for motor drive
+//	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
 
 	while (1) {
 		capture();
@@ -427,6 +507,38 @@ int main(void)
 		duty_cycle = (uint8_t) 100 - 50*position/128;
 		update_duty_cycle_servo(duty_cycle);
 		delay(10);
+
+		// read the ADC and see if there has been a transition
+//		read_ADC_enc();
+//		analog_voltage = (float)(g_Adc16ConversionValue * (VREF_BRD / SE_12BIT)); // get the analog voltage off that pin
+//		if (analog_voltage > ADC_high_thresh) {
+//			ADC_state = 1; // the ADC detected a high signal off the optical encoder
+//		}
+//		else {
+//			ADC_state = 0; // the ADC detected a low signal off the optical encoder
+//		}
+//
+//		if (prev_ADC_state != ADC_state) {
+//			// there has been a transition from high to low or low to high, increment the counter
+//			transition_count++;
+//		}
+//
+//		prev_ADC_state = ADC_state;
+//
+//		// at a frequency of 20Hz, return the number of transitions detected on the ADC to get velocity estimate
+//		if (systime*100 % 5 == 0) {
+//			systime = 0; // reset the systime as to prevent overflow
+//			currVel = getVelocity(transition_count); // get the velocity estimate from the number of transitions in 0.05s (20Hz) to use in our velocity controller
+//			PRINTF("\r\nVelocity: %0.3f\r\n", currVel);
+//			transition_count = 0; // reset the transition counter
+//		}
+
+//		// proportional control
+//		float error = desVel - currVel;
+//		if (error > 0.0) {
+//			duty_cycle = Kp*error;
+//			update_duty_cycle(duty_cycle);
+//		}
 	}
 }
 
@@ -449,7 +561,7 @@ void PIT0_IRQHandler(void) //clear interrupt flag
 //			if (i % 2 == 1) { //odd (first, since i starts at 3)
 //				CLK_HIGH;
 //			} else if (i % 2 == 2) { //even
-//				read_ADC();
+//				read_ADC_cam();
 //				picture[j] = g_Adc16ConversionValue; //store data in array
 //				CLK_LOW;
 //			}

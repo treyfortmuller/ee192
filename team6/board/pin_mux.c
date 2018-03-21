@@ -48,6 +48,10 @@ BOARD_InitPins:
   - {pin_num: '57', peripheral: GPIOB, signal: 'GPIO, 9', pin_signal: PTB9/SPI1_PCS1/UART3_CTS_b/FB_AD20}
   - {pin_num: '65', peripheral: FTM2, signal: 'CH, 1', pin_signal: PTB19/CAN0_RX/FTM2_CH1/I2S0_TX_FS/FB_OE_b/FTM2_QD_PHB}
   - {pin_num: '76', peripheral: FTM0, signal: 'CH, 3', pin_signal: PTC4/LLWU_P8/SPI0_PCS0/UART1_TX/FTM0_CH3/FB_AD11/CMP1_OUT}
+  - {pin_num: '55', peripheral: ADC0, signal: 'SE, 12', pin_signal: ADC0_SE12/PTB2/I2C0_SCL/UART0_RTS_b/ENET0_1588_TMR0/FTM0_FLT3}
+  - {pin_num: '58', peripheral: ADC1, signal: 'SE, 14', pin_signal: ADC1_SE14/PTB10/SPI1_PCS0/UART3_RX/FB_AD19/FTM0_FLT1}
+  - {pin_num: '56', peripheral: ADC0, signal: 'SE, 13', pin_signal: ADC0_SE13/PTB3/I2C0_SDA/UART0_CTS_b/UART0_COL_b/ENET0_1588_TMR1/FTM0_FLT0}
+  - {pin_num: '96', peripheral: FTM3, signal: 'CH, 3', pin_signal: PTD3/SPI0_SIN/UART2_TX/FTM3_CH3/FB_AD3/I2C0_SDA}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -64,8 +68,13 @@ void BOARD_InitPins(void)
     CLOCK_EnableClock(kCLOCK_PortB);
     /* Port C Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortC);
+    /* Port D Clock Gate Control: Clock enabled */
+    CLOCK_EnableClock(kCLOCK_PortD);
     /* Port E Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortE);
+
+    /* PORTB10 (pin 58) is configured as ADC1_SE14 */
+    PORT_SetPinMux(PORTB, 10U, kPORT_PinDisabledOrAnalog);
 
     /* PORTB16 (pin 62) is configured as UART0_RX */
     PORT_SetPinMux(BOARD_INITPINS_DEBUG_UART_RX_PORT, BOARD_INITPINS_DEBUG_UART_RX_PIN, kPORT_MuxAlt3);
@@ -76,6 +85,9 @@ void BOARD_InitPins(void)
     /* PORTB19 (pin 65) is configured as FTM2_CH1 */
     PORT_SetPinMux(PORTB, 19U, kPORT_MuxAlt3);
 
+    /* PORTB2 (pin 55) is configured as ADC0_SE12 */
+    PORT_SetPinMux(BOARD_INITPINS_ADC0_SE12_PORT, BOARD_INITPINS_ADC0_SE12_PIN, kPORT_PinDisabledOrAnalog);
+
     /* PORTB21 (pin 67) is configured as PTB21 */
     PORT_SetPinMux(BOARD_INITPINS_LED_BLUE_PORT, BOARD_INITPINS_LED_BLUE_PIN, kPORT_MuxAsGpio);
 
@@ -85,6 +97,9 @@ void BOARD_InitPins(void)
     /* PORTB23 (pin 69) is configured as PTB23 */
     PORT_SetPinMux(PORTB, 23U, kPORT_MuxAsGpio);
 
+    /* PORTB3 (pin 56) is configured as ADC0_SE13 */
+    PORT_SetPinMux(PORTB, 3U, kPORT_PinDisabledOrAnalog);
+
     /* PORTB9 (pin 57) is configured as PTB9 */
     PORT_SetPinMux(PORTB, 9U, kPORT_MuxAsGpio);
 
@@ -93,6 +108,9 @@ void BOARD_InitPins(void)
 
     /* PORTC4 (pin 76) is configured as FTM0_CH3 */
     PORT_SetPinMux(PORTC, 4U, kPORT_MuxAlt4);
+
+    /* PORTD3 (pin 96) is configured as FTM3_CH3 */
+    PORT_SetPinMux(BOARD_INITPINS_UART2_TX_PORT, BOARD_INITPINS_UART2_TX_PIN, kPORT_MuxAlt4);
 
     /* PORTE26 (pin 33) is configured as PTE26 */
     PORT_SetPinMux(BOARD_INITPINS_LED_GREEN_PORT, BOARD_INITPINS_LED_GREEN_PIN, kPORT_MuxAsGpio);
