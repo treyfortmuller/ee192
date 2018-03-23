@@ -128,8 +128,10 @@ volatile uint32_t systime = 0; // systime updated very 100 us = 4 days ==> NEED 
 
 // ADC variables
 volatile bool g_Adc16ConversionDoneFlag = false;
-volatile uint32_t g_Adc16ConversionValue = 0;
-adc16_channel_config_t g_adc16ChannelConfigStruct;
+volatile uint32_t g_Adc16ConversionValue_cam = 0;
+volatile uint32_t g_Adc16ConversionValue_enc = 0;
+adc16_channel_config_t g_adc16ChannelConfigStruct_cam;
+adc16_channel_config_t g_adc16ChannelConfigStruct_enc;
 
 // Velocity control variables
 const float ADC_high_thresh = 2.5f; // the cutoff for a "high" signal from the optical encoder in volts
@@ -296,17 +298,17 @@ static void init_adc_cam(void)
 #endif /* FSL_FEATURE_ADC16_HAS_CALIBRATION */
 
     /* Prepare ADC channel setting */
-    g_adc16ChannelConfigStruct.channelNumber = DEMO_ADC16_USER_CHANNEL_CAM1;
-    g_adc16ChannelConfigStruct.enableInterruptOnConversionCompleted = true;
+    g_adc16ChannelConfigStruct_cam.channelNumber = DEMO_ADC16_USER_CHANNEL_CAM1;
+    g_adc16ChannelConfigStruct_cam.enableInterruptOnConversionCompleted = true;
 
 #if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-    g_adc16ChannelConfigStruct.enableDifferentialConversion = false;
+    g_adc16ChannelConfigStruct_cam.enableDifferentialConversion = false;
 #endif /* FSL_FEATURE_ADC16_HAS_DIFF_MODE */
 }
 
 void read_ADC_cam(void){
 	g_Adc16ConversionDoneFlag = false;
-	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR_CAM, DEMO_ADC16_CHANNEL_GROUP_CAM, &g_adc16ChannelConfigStruct);
+	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR_CAM, DEMO_ADC16_CHANNEL_GROUP_CAM, &g_adc16ChannelConfigStruct_cam);
 
 	//Block until the ADC Conversion is finished
 	 while (!g_Adc16ConversionDoneFlag)
@@ -318,7 +320,7 @@ void DEMO_ADC16_IRQ_HANDLER_FUNC_CAM(void)
 {
     g_Adc16ConversionDoneFlag = true;
     /* Read conversion result to clear the conversion completed flag. */
-    g_Adc16ConversionValue = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR_CAM, DEMO_ADC16_CHANNEL_GROUP_CAM);
+    g_Adc16ConversionValue_cam = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR_CAM, DEMO_ADC16_CHANNEL_GROUP_CAM);
     /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
       exception return operation might vector to incorrect interrupt */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
@@ -364,17 +366,17 @@ static void init_adc_enc(void)
 #endif /* FSL_FEATURE_ADC16_HAS_CALIBRATION */
 
     /* Prepare ADC channel setting */
-    g_adc16ChannelConfigStruct.channelNumber = DEMO_ADC16_USER_CHANNEL_ENC;
-    g_adc16ChannelConfigStruct.enableInterruptOnConversionCompleted = true;
+    g_adc16ChannelConfigStruct_enc.channelNumber = DEMO_ADC16_USER_CHANNEL_ENC;
+    g_adc16ChannelConfigStruct_enc.enableInterruptOnConversionCompleted = true;
 
 #if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-    g_adc16ChannelConfigStruct.enableDifferentialConversion = false;
+    g_adc16ChannelConfigStruct_enc.enableDifferentialConversion = false;
 #endif /* FSL_FEATURE_ADC16_HAS_DIFF_MODE */
 }
 
 void read_ADC_enc(void){
 	g_Adc16ConversionDoneFlag = false;
-	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC, &g_adc16ChannelConfigStruct);
+	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC, &g_adc16ChannelConfigStruct_enc);
 
 	//Block until the ADC Conversion is finished
 	 while (!g_Adc16ConversionDoneFlag)
@@ -386,7 +388,7 @@ void DEMO_ADC16_IRQ_HANDLER_FUNC_ENC(void)
 {
     g_Adc16ConversionDoneFlag = true;
     /* Read conversion result to clear the conversion completed flag. */
-    g_Adc16ConversionValue = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC);
+    g_Adc16ConversionValue_enc = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC);
     /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
       exception return operation might vector to incorrect interrupt */
 #if defined __CORTEX_M && (__CORTEX_M == 4U)
@@ -443,7 +445,7 @@ void capture()
     	CLK_HIGH;
         delay(1);
         read_ADC_cam();
-        picture[i] = g_Adc16ConversionValue; //store data in array
+        picture[i] = g_Adc16ConversionValue_cam; //store data in array
         CLK_LOW;
         delay(1);
     }
@@ -497,16 +499,18 @@ int main(void)
 	init_pit();
 	init_pwm_servo(500, 75); //start 500hz pwm at 40% duty cycle, for servo steer
 	init_pwm_motor(1000, 15); //start 1khz pwm at 10% duty cycle, for motor drive
-//	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
+	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
 
 	while (1) {
 		capture();
 		position = argmax(picture, 128);
-		set_output_track(position);
-		print_track_to_console(track);
-		duty_cycle = (uint8_t) 100 - 50*position/128;
-		update_duty_cycle_servo(duty_cycle);
-		delay(10);
+//		set_output_track(position);
+//		print_track_to_console(track);
+//		duty_cycle = (uint8_t) 100 - 50*position/128;
+//		update_duty_cycle_servo(duty_cycle);
+//		delay(10);
+		PRINTF("\r\nADC1: %d\r\n", position);
+		PRINTF("\r\nADC2: %d\r\n", g_Adc16ConversionValue_enc);
 
 		// read the ADC and see if there has been a transition
 //		read_ADC_enc();
