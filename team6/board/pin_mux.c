@@ -52,6 +52,9 @@ BOARD_InitPins:
   - {pin_num: '58', peripheral: ADC1, signal: 'SE, 14', pin_signal: ADC1_SE14/PTB10/SPI1_PCS0/UART3_RX/FB_AD19/FTM0_FLT1}
   - {pin_num: '56', peripheral: ADC0, signal: 'SE, 13', pin_signal: ADC0_SE13/PTB3/I2C0_SDA/UART0_CTS_b/UART0_COL_b/ENET0_1588_TMR1/FTM0_FLT0}
   - {pin_num: '96', peripheral: FTM3, signal: 'CH, 3', pin_signal: PTD3/SPI0_SIN/UART2_TX/FTM3_CH3/FB_AD3/I2C0_SDA}
+  - {pin_num: '35', peripheral: GPIOA, signal: 'GPIO, 1', pin_signal: PTA1/UART0_RX/FTM0_CH6/JTAG_TDI/EZP_DI}
+  - {pin_num: '95', peripheral: GPIOD, signal: 'GPIO, 2', pin_signal: PTD2/LLWU_P13/SPI0_SOUT/UART2_RX/FTM3_CH2/FB_AD4/I2C0_SCL}
+  - {pin_num: '90', peripheral: GPIOC, signal: 'GPIO, 16', pin_signal: PTC16/UART3_RX/ENET0_1588_TMR0/FB_CS5_b/FB_TSIZ1/FB_BE23_16_BLS15_8_b}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -64,6 +67,8 @@ BOARD_InitPins:
  * END ****************************************************************************************************************/
 void BOARD_InitPins(void)
 {
+    /* Port A Clock Gate Control: Clock enabled */
+    CLOCK_EnableClock(kCLOCK_PortA);
     /* Port B Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortB);
     /* Port C Clock Gate Control: Clock enabled */
@@ -72,6 +77,9 @@ void BOARD_InitPins(void)
     CLOCK_EnableClock(kCLOCK_PortD);
     /* Port E Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortE);
+
+    /* PORTA1 (pin 35) is configured as PTA1 */
+    PORT_SetPinMux(PORTA, 1U, kPORT_MuxAsGpio);
 
     /* PORTB10 (pin 58) is configured as ADC1_SE14 */
     PORT_SetPinMux(PORTB, 10U, kPORT_PinDisabledOrAnalog);
@@ -106,8 +114,14 @@ void BOARD_InitPins(void)
     /* PORTC1 (pin 71) is configured as FTM0_CH0 */
     PORT_SetPinMux(PORTC, 1U, kPORT_MuxAlt4);
 
+    /* PORTC16 (pin 90) is configured as PTC16 */
+    PORT_SetPinMux(BOARD_INITPINS_TMR_1588_0_PORT, BOARD_INITPINS_TMR_1588_0_PIN, kPORT_MuxAsGpio);
+
     /* PORTC4 (pin 76) is configured as FTM0_CH3 */
     PORT_SetPinMux(PORTC, 4U, kPORT_MuxAlt4);
+
+    /* PORTD2 (pin 95) is configured as PTD2 */
+    PORT_SetPinMux(BOARD_INITPINS_UART2_RX_PORT, BOARD_INITPINS_UART2_RX_PIN, kPORT_MuxAsGpio);
 
     /* PORTD3 (pin 96) is configured as FTM3_CH3 */
     PORT_SetPinMux(BOARD_INITPINS_UART2_TX_PORT, BOARD_INITPINS_UART2_TX_PIN, kPORT_MuxAlt4);

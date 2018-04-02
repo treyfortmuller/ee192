@@ -348,6 +348,188 @@ void FTM_2_init(void) {
 }
 
 /***********************************************************************************************************************
+ * FTM_3 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'FTM_3'
+- type: 'ftm'
+- mode: 'EdgeAligned'
+- type_id: 'ftm_5e037045c21cf6f361184c371dbbbab2'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'FTM3'
+- config_sets:
+  - ftm_main_config:
+    - ftm_config:
+      - clockSource: 'kFTM_SystemClock'
+      - prescale: 'kFTM_Prescale_Divide_1'
+      - timerFrequency: '10000'
+      - bdmMode: 'kFTM_BdmMode_0'
+      - pwmSyncMode: 'kFTM_SoftwareTrigger'
+      - reloadPoints: ''
+      - faultMode: 'kFTM_Fault_Disable'
+      - faultFilterValue: '0'
+      - deadTimePrescale: 'kFTM_Deadtime_Prescale_1'
+      - deadTimeValue: '0'
+      - extTriggers: ''
+      - chnlInitState: ''
+      - chnlPolarity: ''
+      - useGlobalTimeBase: 'false'
+    - timer_interrupts: ''
+    - enable_irq: 'false'
+    - ftm_interrupt:
+      - IRQn: 'FTM3_IRQn'
+      - enable_priority: 'false'
+      - enable_custom_name: 'false'
+    - EnableTimerInInit: 'true'
+    - quick_selection: 'QuickSelectionDefault'
+  - ftm_edge_aligned_mode:
+    - ftm_edge_aligned_channels_config: []
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+const ftm_config_t FTM_3_config = {
+  .prescale = kFTM_Prescale_Divide_1,
+  .bdmMode = kFTM_BdmMode_0,
+  .pwmSyncMode = kFTM_SoftwareTrigger,
+  .reloadPoints = 0,
+  .faultMode = kFTM_Fault_Disable,
+  .faultFilterValue = 0,
+  .deadTimePrescale = kFTM_Deadtime_Prescale_1,
+  .deadTimeValue = 0,
+  .extTriggers = 0,
+  .chnlInitState = 0,
+  .chnlPolarity = 0,
+  .useGlobalTimeBase = false
+};
+
+void FTM_3_init(void) {
+  FTM_Init(FTM_3_PERIPHERAL, &FTM_3_config);
+  FTM_SetTimerPeriod(FTM_3_PERIPHERAL, ((FTM_3_CLOCK_SOURCE/ (1U << (FTM_3_PERIPHERAL->SC & FTM_SC_PS_MASK))) / 10000) + 1);
+  FTM_StartTimer(FTM_3_PERIPHERAL, kFTM_SystemClock);
+}
+
+/***********************************************************************************************************************
+ * GPIO_4 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'GPIO_4'
+- type: 'gpio'
+- mode: 'GPIO'
+- type_id: 'gpio_f970a92e447fa4793838db25a2947ed7'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'GPIOD'
+- config_sets:
+  - fsl_gpio:
+    - enable_irq: 'false'
+    - port_interrupt:
+      - IRQn: 'PORTD_IRQn'
+      - enable_priority: 'false'
+      - enable_custom_name: 'false'
+    - gpio_config: []
+    - quick_selection: 'QS_GPIO_1'
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+
+void GPIO_4_init(void) {
+  /* Make sure, the clock gate for port D is enabled (e. g. in pin_mux.c) */
+}
+
+/***********************************************************************************************************************
+ * ADC16_2 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'ADC16_2'
+- type: 'adc16'
+- mode: 'ADC'
+- type_id: 'adc16_7d827be2dc433dc756d94a7ce88cbcc5'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'ADC1'
+- config_sets:
+  - fsl_adc16:
+    - adc16_config:
+      - referenceVoltageSource: 'kADC16_ReferenceVoltageSourceVref'
+      - clockSource: 'kADC16_ClockSourceAsynchronousClock'
+      - enableAsynchronousClock: 'true'
+      - clockDivider: 'kADC16_ClockDivider8'
+      - resolution: 'kADC16_ResolutionSE12Bit'
+      - longSampleMode: 'kADC16_LongSampleDisabled'
+      - enableHighSpeed: 'false'
+      - enableLowPower: 'false'
+      - enableContinuousConversion: 'false'
+    - adc16_channel_mux_mode: 'kADC16_ChannelMuxA'
+    - adc16_hardware_compare_config:
+      - hardwareCompareModeEnable: 'false'
+    - doAutoCalibration: 'false'
+    - trigger: 'false'
+    - hardwareAverageConfiguration: 'kADC16_HardwareAverageDisabled'
+    - enable_irq: 'false'
+    - adc_interrupt:
+      - IRQn: 'ADC1_IRQn'
+      - enable_priority: 'false'
+      - enable_custom_name: 'false'
+    - adc16_channels_config: []
+    - quick_selection: 'QS_ADC16_1'
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+const adc16_config_t ADC16_2_config = {
+  .referenceVoltageSource = kADC16_ReferenceVoltageSourceVref,
+  .clockSource = kADC16_ClockSourceAsynchronousClock,
+  .enableAsynchronousClock = true,
+  .clockDivider = kADC16_ClockDivider8,
+  .resolution = kADC16_ResolutionSE12Bit,
+  .longSampleMode = kADC16_LongSampleDisabled,
+  .enableHighSpeed = false,
+  .enableLowPower = false,
+  .enableContinuousConversion = false
+};
+const adc16_channel_mux_mode_t ADC16_2_muxMode = kADC16_ChannelMuxA;
+const adc16_hardware_average_mode_t ADC16_2_hardwareAverageMode = kADC16_HardwareAverageDisabled;
+
+void ADC16_2_init(void) {
+  /* Initialize ADC16 converter */
+  ADC16_Init(ADC16_2_PERIPHERAL, &ADC16_2_config);
+  /* Make sure, that software trigger is used */
+  ADC16_EnableHardwareTrigger(ADC16_2_PERIPHERAL, false);
+  /* Configure hardware average mode */
+  ADC16_SetHardwareAverage(ADC16_2_PERIPHERAL, ADC16_2_hardwareAverageMode);
+  /* Configure channel multiplexing mode */
+  ADC16_SetChannelMuxMode(ADC16_2_PERIPHERAL, ADC16_2_muxMode);
+}
+
+/***********************************************************************************************************************
+ * GPIO_5 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'GPIO_5'
+- type: 'gpio'
+- mode: 'GPIO'
+- type_id: 'gpio_f970a92e447fa4793838db25a2947ed7'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'GPIOA'
+- config_sets:
+  - fsl_gpio:
+    - enable_irq: 'false'
+    - port_interrupt:
+      - IRQn: 'PORTA_IRQn'
+      - enable_priority: 'false'
+      - enable_custom_name: 'false'
+    - gpio_config: []
+    - quick_selection: 'QS_GPIO_1'
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+
+void GPIO_5_init(void) {
+  /* Make sure, the clock gate for port A is enabled (e. g. in pin_mux.c) */
+}
+
+/***********************************************************************************************************************
  * Initialization functions
  **********************************************************************************************************************/
 void BOARD_InitPeripherals(void)
@@ -360,6 +542,10 @@ void BOARD_InitPeripherals(void)
   ADC16_1_init();
   GPIO_3_init();
   FTM_2_init();
+  FTM_3_init();
+  GPIO_4_init();
+  ADC16_2_init();
+  GPIO_5_init();
 }
 
 /***********************************************************************************************************************

@@ -57,6 +57,24 @@ extern "C" {
 #define FTM_2_IRQN FTM2_IRQn
 /* FTM_2 interrupt handler identifier. */
 #define FTM_2_IRQHANDLER FTM2_IRQHandler
+/* Definition of peripheral ID */
+#define FTM_3_PERIPHERAL FTM3
+/* Definition of the clock source frequency */
+#define FTM_3_CLOCK_SOURCE CLOCK_GetFreq(kCLOCK_BusClk)
+/* FTM_3 interrupt vector ID (number). */
+#define FTM_3_IRQN FTM3_IRQn
+/* FTM_3 interrupt handler identifier. */
+#define FTM_3_IRQHANDLER FTM3_IRQHandler
+/* Alias for GPIOD peripheral */
+#define GPIO_4_GPIO GPIOD
+/* Alias for ADC1 peripheral */
+#define ADC16_2_PERIPHERAL ADC1
+/* ADC16_2 interrupt vector ID (number). */
+#define ADC16_2_IRQN ADC1_IRQn
+/* ADC16_2 interrupt handler identifier. */
+#define ADC16_2_IRQHANDLER ADC1_IRQHandler
+/* Alias for GPIOA peripheral */
+#define GPIO_5_GPIO GPIOA
 
 /***********************************************************************************************************************
  * Global variables
@@ -67,6 +85,10 @@ extern const adc16_config_t ADC16_1_config;
 extern const adc16_channel_mux_mode_t ADC16_1_muxMode;
 extern const adc16_hardware_average_mode_t ADC16_1_hardwareAverageMode;
 extern const ftm_config_t FTM_2_config;
+extern const ftm_config_t FTM_3_config;
+extern const adc16_config_t ADC16_2_config;
+extern const adc16_channel_mux_mode_t ADC16_2_muxMode;
+extern const adc16_hardware_average_mode_t ADC16_2_hardwareAverageMode;
 
 /***********************************************************************************************************************
  * Initialization functions

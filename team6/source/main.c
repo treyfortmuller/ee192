@@ -21,6 +21,23 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Initialized Pins (in use) */
+/* PTC1 - FTM0 - Servo PWM
+ * PTB19 - FTM2 - Motor PWM
+ * PTB2, ADC0_SE12 - ADC for Line Scan Camera 1
+ * PTB3, ADC0_SE13 - ADC for Line Scan Camera 2
+ * PTB10, ADC1_SE14 - ADC for Optical Encoder
+ * PTB9 - GPIOB - SI for LSC1
+ * PTB23 - GPIOE - CLK for LCS1
+ *
+ * Extras Pins (in case; need code)
+ * PTD3 - FTM3 - Braking PWM?
+ * PTA1 - GPIOA - SI for LSC2
+ * PTD2 - GPIOD - CLK for LCS2
+ * PTC16 - GPIOC - Encoder Timing?
+ */
+
 /* The Flex Timer Module (FTM) instance/channel used for board. See pin view or open declaration for more info */
 #define BOARD_FTM_BASEADDR_SERVO FTM0
 #define BOARD_FTM_BASEADDR_MOTOR FTM2
@@ -147,6 +164,11 @@ int transition_count = 0; // the number of counts detected in the time step
 int picture[128];
 int Max, Min;
 char track[frame_width]; // the telemetry output representation of the detected track
+
+// PD controller variables
+const float dt = 0.010; //PD timestep in SECONDS (50 Hz)
+const float kp = 0.50; //Proportional Gain
+const float kd = 0.10; //Derivative Gain
 
 /*******************************************************************************
  * Code
@@ -407,7 +429,7 @@ void init_pit()
 	PIT_Init(PIT, &pitConfig);
 	/* Set timer period for channel 0 */
 
-	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(50U, PIT_SOURCE_CLOCK)); // 50us timing
+	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(1U, PIT_SOURCE_CLOCK)); // 50us timing
 	/* Enable timer interrupts for channel 0 */
 	PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
 	/* Enable at the NVIC */
@@ -436,9 +458,9 @@ void capture()
 {
     int i;
     SI_HIGH; //set SI to 1
-    delay(1);
+    delay(200);
     CLK_HIGH; //set CLK to 1
-    delay(1);
+    delay(200);
     SI_LOW; //set SI to 0
     for (i = 0; i < 127; i++) { //loop for 128 pixels
     	CLK_LOW;
@@ -452,7 +474,7 @@ void capture()
     CLK_HIGH;
     delay(1);
     CLK_LOW;
-    delay(1);
+    delay(200);
 }
 
 int argmax(int arr[], size_t size)
@@ -494,23 +516,43 @@ int main(void)
 {
 	init_board();
 	init_adc_cam();
-	init_adc_enc();
+//	init_adc_enc();
 	init_gpio();
 	init_pit();
-	init_pwm_servo(500, 75); //start 500hz pwm at 40% duty cycle, for servo steer
-	init_pwm_motor(1000, 15); //start 1khz pwm at 10% duty cycle, for motor drive
-	int position = 10; //TODO: this is the fake result of the argmax over the camera frame
+	init_pwm_motor(1000, 15); //start 1khz pwm at 15% duty cycle, for motor drive
+	init_pwm_servo(500, 75); //start 500hz pwm at 75% duty cycle, for servo steer
+	float lat_err = 0;
+	float old_lat_err = 0;
+	float lat_vel = 0;
+	int position = 10; //this is the fake result of the argmax over the camera frame
 
 	while (1) {
 		capture();
 		position = argmax(picture, 128);
-//		set_output_track(position);
-//		print_track_to_console(track);
+		set_output_track(position);
+		print_track_to_console(track);
+		lat_err = 64 - position;
+		// pwm limits
+		if (duty_cycle < 55) {
+			duty_cycle = 55;
+		} else if (duty_cycle > 95) {
+			duty_cycle = 95;
+		}
+		// controller
+		if (dt > 0.0) {
+			lat_vel = (lat_err - old_lat_err)/dt;
+		} else {
+			lat_vel = 0.0;
+		}
+		old_lat_err = lat_err;
+		// update pwm
+		duty_cycle = (uint8_t) 75 -kp*lat_err-kd*lat_vel;
+		update_duty_cycle_servo(duty_cycle);
+		delay(1000);
+
+		//line scan checkoff code
 //		duty_cycle = (uint8_t) 100 - 50*position/128;
 //		update_duty_cycle_servo(duty_cycle);
-//		delay(10);
-		PRINTF("\r\nADC1: %d\r\n", position);
-		PRINTF("\r\nADC2: %d\r\n", g_Adc16ConversionValue_enc);
 
 		// read the ADC and see if there has been a transition
 //		read_ADC_enc();
@@ -537,12 +579,6 @@ int main(void)
 //			transition_count = 0; // reset the transition counter
 //		}
 
-//		// proportional control
-//		float error = desVel - currVel;
-//		if (error > 0.0) {
-//			duty_cycle = Kp*error;
-//			update_duty_cycle(duty_cycle);
-//		}
 	}
 }
 
