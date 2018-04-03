@@ -1,26 +1,21 @@
+# EECS192 Spring 2018 Track Finding from 1D line sensor data
 
-# coding: utf-8
-
-# # EECS192 Spring 2018 Track Finding from 1D line sensor data
-
-# In[6]:
-
-# changed to use 8 bit compressed line sensor values
 # data format: 128 comma separated values, last value in line has space, not comma
 # line samples are about 10 ms apart
-#  csv file format time in ms, 128 byte array, velocity
+# csv file format time in ms, 128 byte array, velocity
 # note AGC has already been applied to data, and camera has been calibrated for illumination effects
 
+### MAIN ALGO FLOW CHART ###
+# raw data after variable exposure > filter for hifreq noise >
+# derivative filter > cross correlation with model > argmax of result >
+# generate threshold for track > pick lines through crosses based on history
 
-# In[8]:
 
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 # import scipy.ndimage as ndi  # useful for 1d filtering functions
 plt.close("all")   # try to close all open figs
-
-# In[9]:
 
 # Graphing helper function, used in plot_frame function below
 def setup_graph(title='', x_label='', y_label='', fig_size=None):
@@ -34,10 +29,6 @@ def setup_graph(title='', x_label='', y_label='', fig_size=None):
 
 
 # Line scan plotting function.
-# 
-
-# In[10]:
-
 def plot_frame(linearray):
     nframes = np.size(linearray)/128
     n = range(0,128)
@@ -55,11 +46,7 @@ def plot_frame(linearray):
         plt.ylabel('Frame n - Frame 0')
 
 
-# ### grayscale plotting of line function:
-# 
-
-# In[11]:
-
+# grayscale plotting of line function:
 CAMERA_LENGTH = 128
 INTENSITY_MIN = 0
 INTENSITY_MAX = 255
@@ -87,12 +74,11 @@ def plot_gray(fig, camera_data):
       interpolation='None')
 
 
-# In[12]:
 
-### inputs:
+# inputs:
 # linescans - An array of length n where each element is an array of length 128. Represents n frames of linescan data.
 
-### outputs:
+# outputs:
 # track_center_list - A length n array of integers from 0 to 127. Represents the predicted center of the line in each frame.
 # track_found_list - A length n array of booleans. Represents whether or not each frame contains a detected line.
 # cross_found_list - A length n array of booleans. Represents whether or not each frame contains a crossing.
@@ -103,7 +89,7 @@ def find_track(linescans):
     track_found_list = n * [True]
     cross_found_list = n * [False]
     
-    ### Code to be added here
+    ### MAIN ALGO ###
     prev_track = 64 # the previous iteration's track index
     
     for i in range(0, n): # iterate through the whole track
@@ -173,12 +159,12 @@ plot_gray(ax, linescans)
 
 
 # plot of velocities
-fig = plt.figure(figsize = (8, 4))
-# fig.set_size_inches(13, 4)
-fig.suptitle("velocities %s\n" % (filename))   
-plt.xlabel('time [ms]')
-plt.ylabel('velocity (m/s)')  
-plt.plot(times,velocities)
+# fig = plt.figure(figsize = (8, 4))
+# # fig.set_size_inches(13, 4)
+# fig.suptitle("velocities %s\n" % (filename))   
+# plt.xlabel('time [ms]')
+# plt.ylabel('velocity (m/s)')  
+# plt.plot(times,velocities)
 
 # plot of found track position 
 fig = plt.figure(figsize = (8, 4))
@@ -207,38 +193,13 @@ plt.plot(times,cross_found_list)
 ### EXPERIMENTING WITH DIFFERENCING ###
 # plot of an individual frame (raw data)
 
-# frame_number = 50
+frame_number = 50
 
-# # calculating the difference between the peak of the plot and the average
-# frame_avg = np.mean(linescans[frame_number])
-# frame_peak = np.max(linescans[frame_number])
-# peak_avg_diff = frame_peak - frame_avg
-
-# print 'raw peak - average = ', peak_avg_diff
-
-# fig = plt.figure(figsize = (8, 4))
-# fig.suptitle("track center %d\n" % (frame_number))   
-# plt.xlabel('pixel')
-# plt.ylabel('intensity')  
-# plt.plot(linescans[frame_number])
-
-# # plot of an individual frame with frame subtraction and peak detection
-
-# frame_avg = np.mean(linescans[frame_number])
-# result_frame = linescans[frame_number] - frame_avg
-
-# # calculating the difference between the peak of the plot and the average
-# result_peak = np.max(result_frame)
-# result_avg = np.mean(result_frame) 
-# peak_avg_diff = result_peak - result_avg
-
-# print 'resultant peak - average = ', peak_avg_diff
-
-# fig = plt.figure(figsize = (8, 4))
-# fig.suptitle("track center %d\n" % (frame_number))   
-# plt.xlabel('pixel')
-# plt.ylabel('intensity')
-# plt.plot(result_frame)
+fig = plt.figure(figsize = (8, 4))
+fig.suptitle("frame %d\n" % (frame_number))   
+plt.xlabel('pixel')
+plt.ylabel('intensity')  
+plt.plot(linescans[frame_number])
 
 ### GET THE TRACK ###
 find_track(linescans)
