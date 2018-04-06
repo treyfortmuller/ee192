@@ -519,25 +519,25 @@ int main(void)
 //	init_adc_enc();
 	init_gpio();
 	init_pit();
-	init_pwm_motor(1000, 20); //start 1khz pwm at 15% duty cycle, for motor drive
+	init_pwm_motor(500, 20); //start 1khz pwm at 15% duty cycle, for motor drive
 	init_pwm_servo(500, 75); //start 500hz pwm at 75% duty cycle, for servo steer
 	float lat_err = 0;
 	float old_lat_err = 0;
 	float lat_vel = 0;
-	int position = 10; //this is the fake result of the argmax over the camera frame
-	int old_position = 64;
+	int position = 64; //this is the fake result of the argmax over the camera frame
+//	int old_position = 64;
 
 	while (1) {
 		capture();
 		position = argmax(picture, 128);
 		// line crossing
-		if (position - old_position > 50) {
-			position = old_position;
-		} else if (position - old_position < -50) {
-			position = old_position;
-		}
-		set_output_track(position);
-		print_track_to_console(track);
+//		if (position - old_position > 50) {
+//			position = old_position;
+//		} else if (position - old_position < -50) {
+//			position = old_position;
+//		}
+//		set_output_track(position);
+//		print_track_to_console(track);
 		lat_err = 64 - position;
 		// pwm limits
 		if (duty_cycle < 55) {
@@ -552,7 +552,7 @@ int main(void)
 			lat_vel = 0.0;
 		}
 		old_lat_err = lat_err;
-		old_position = position;
+//		old_position = position;
 		// update pwm
 		duty_cycle = (uint8_t) 75 -kp*lat_err-kd*lat_vel;
 		update_duty_cycle_servo(duty_cycle);
