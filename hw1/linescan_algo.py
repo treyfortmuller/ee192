@@ -160,6 +160,8 @@ plot_gray(ax, linescans)
 der_data = []
 frame_number = 50
 
+print(np.average(linescans[frame_number]))
+
 for i in range(0, CAMERA_LENGTH-1):
 	der_data.append(linescans[frame_number][i] - linescans[frame_number][i+1])
 
