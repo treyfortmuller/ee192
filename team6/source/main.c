@@ -13,10 +13,13 @@
 #include "fsl_ftm.h"
 #include "fsl_adc16.h"
 #include "fsl_pit.h"  /* periodic interrupt timer */
+#include "fsl_uart.h"
 
 /* Additional inclusions. */
 #include "clock_config.h"
 #include "pin_mux.h"
+#include "telemetry/telemetry_uart.h"
+#include "telemetry/telemetry.h"
 
 /*******************************************************************************
  * Definitions
@@ -518,6 +521,7 @@ int main(void)
 	init_adc_cam();
 //	init_adc_enc();
 	init_gpio();
+	init_uart();
 	init_pit();
 	init_pwm_motor(1000, 18); //start 1khz pwm at 15% duty cycle, for motor drive
 	init_pwm_servo(500, 75); //start 500hz pwm at 75% duty cycle, for servo steer
@@ -525,6 +529,14 @@ int main(void)
 	float old_lat_err = 0;
 	float lat_vel = 0;
 	int position = 64; //this is the fake result of the argmax over the camera frame
+	float motor_pwm = 20.0f;
+
+	register_telemetry_variable("uint", "time", "Time", "ms", (uint32_t*) &systime,  1, 0.0f,  0.0f);
+	register_telemetry_variable("float", "motor", "Motor PWM", "Percent DC", (uint32_t*) &motor_pwm,  1, 0.0f,  40.0f);
+	register_telemetry_variable("uint", "linescan", "Linescan", "ADC", (uint32_t*) &position,  1, 0.0f,  0.0f);
+
+	//Tell the plotter what variables to plot. Send this once before the main loop
+	transmit_header();
 
 	while (1) {
 		capture();
@@ -549,6 +561,7 @@ int main(void)
 		duty_cycle = (uint8_t) 75 - kp*lat_err - kd*lat_vel;
 		update_duty_cycle_servo(duty_cycle);
 		delay(1000);
+		do_io();
 
 		//line scan checkoff code
 //		duty_cycle = (uint8_t) 100 - 50*position/128;
