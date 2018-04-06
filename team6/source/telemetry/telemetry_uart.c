@@ -27,7 +27,7 @@ void init_uart(void){
      * config.enableRx = false;
      */
     UART_GetDefaultConfig(&config);
-    config.baudRate_Bps = 9600U;
+    config.baudRate_Bps = 115200U;
     config.enableTx = true;
     config.enableRx = true;
 

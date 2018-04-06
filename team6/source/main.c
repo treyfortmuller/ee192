@@ -5,6 +5,7 @@
 
 /* System includes. */
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Freescale includes. */
 #include "board.h"
@@ -166,7 +167,7 @@ int prev_ADC_state = 0; // the previous loop's ADC state for comparison
 int transition_count = 0; // the number of counts detected in the time step
 
 // Line scan variables
-int picture[128];
+uint32_t picture[128];
 int Max, Min;
 char track[frame_width]; // the telemetry output representation of the detected track
 
@@ -461,7 +462,7 @@ float getVelocity(int transition_count) {
 
 void capture()
 {
-    int i;
+    uint32_t i;
     SI_HIGH; //set SI to 1
     delay(200);
     CLK_HIGH; //set CLK to 1
@@ -482,13 +483,13 @@ void capture()
     delay(200);
 }
 
-int argmax(int arr[], size_t size)
+int argmax(uint32_t arr[], size_t size)
 {
 	/* enforce the contract */
 	assert(arr && size);
 	size_t i;
-	int maxValue = arr[0];
-	int temp = 0;
+	uint32_t maxValue = arr[0];
+	uint32_t temp = 0;
 	for (i = 1; i < size; ++i) {
 		if (arr[i] > maxValue) {
 			maxValue = arr[i];
@@ -530,18 +531,29 @@ int main(void)
 	float lat_err = 0;
 	float old_lat_err = 0;
 	float lat_vel = 0;
-	int position = 10; //this is the fake result of the argmax over the camera frame
-	uint8_t motor_pwm = 20; //set value for telemetry
+	int position = 64; // the new argmax over the camera frame
+//	int position = 64; // the 'filtered' result of our line detection algo
+//	int last_position = 64; // the previous frame's result of our line detection algo
+//	float motor_pwm = 20.0f; //set value for telemetry
 
 	//telemetry - see frdmk64f_telemetry folder for detailed comments
-	register_telemetry_variable("uint", "time", "Time", "ms", (uint32_t*) &systime,  1, 0,  0.0);
-	register_telemetry_variable("float", "motor", "Motor PWM", "Percent DC", (uint32_t*) &motor_pwm,  1, 0.0f,  0.5f);
-	register_telemetry_variable("uint", "linescan", "Linescan", "ADC", (uint32_t*) &picture,  128, 0.0f,  0.0f);
-	transmit_header();
+//	register_telemetry_variable("uint", "time", "Time", "50 ms", (uint32_t*) &systime,  1, 0.0f,  0.0f);
+//	register_telemetry_variable("float", "motor", "Motor PWM", "Percent DC", (uint32_t*) &motor_pwm,  1, 0.0f,  40.0f);
+//	register_telemetry_variable("uint", "linescan", "Linescan", "ADC", (uint32_t*) &position,  1, 0.0f,  128.0f);
+//	transmit_header();
 
 	while (1) {
 		capture();
+//		do_io();
+
 		position = argmax(picture, 128);
+		// if the new argmax is too far from the previous argmax, use the previous argmax
+//		if (abs(new_position - last_position) > 50) {
+//			position = last_position;
+//		}
+//		else {
+//			position = new_position;
+//		}
 		set_output_track(position);
 		print_track_to_console(track);
 		lat_err = 64 - position;
@@ -562,11 +574,7 @@ int main(void)
 		duty_cycle = (uint8_t) 75 -kp*lat_err-kd*lat_vel;
 		update_duty_cycle_servo(duty_cycle);
 		delay(1000);
-		do_io(); //send a telemetry packet with the values of all the variables
-
-		//line scan checkoff code
-//		duty_cycle = (uint8_t) 100 - 50*position/128;
-//		update_duty_cycle_servo(duty_cycle);
+		//send a telemetry packet with the values of all the variables
 
 		// read the ADC and see if there has been a transition
 //		read_ADC_enc();
