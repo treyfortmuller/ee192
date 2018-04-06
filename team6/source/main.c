@@ -531,32 +531,29 @@ int main(void)
 	float lat_err = 0;
 	float old_lat_err = 0;
 	float lat_vel = 0;
-	int position = 64; // the new argmax over the camera frame
-//	int position = 64; // the 'filtered' result of our line detection algo
-//	int last_position = 64; // the previous frame's result of our line detection algo
-//	float motor_pwm = 20.0f; //set value for telemetry
+	int position = 10; //this is the fake result of the argmax over the camera frame
+	int old_position = 64;
+	float motor_pwm = 20.0f; //set value for telemetry
 
-	//telemetry - see frdmk64f_telemetry folder for detailed comments
-//	register_telemetry_variable("uint", "time", "Time", "50 ms", (uint32_t*) &systime,  1, 0.0f,  0.0f);
-//	register_telemetry_variable("float", "motor", "Motor PWM", "Percent DC", (uint32_t*) &motor_pwm,  1, 0.0f,  40.0f);
-//	register_telemetry_variable("uint", "linescan", "Linescan", "ADC", (uint32_t*) &position,  1, 0.0f,  128.0f);
-//	transmit_header();
+//	telemetry - see frdmk64f_telemetry folder for detailed comments
+	register_telemetry_variable("uint", "time", "Time", "50 ms", (uint32_t*) &systime,  1, 0.0f,  0.0f);
+	register_telemetry_variable("float", "motor", "Motor PWM", "Percent DC", (uint32_t*) &motor_pwm,  1, 0.0f,  40.0f);
+	register_telemetry_variable("uint", "linescan", "Linescan", "ADC", (uint32_t*) &position,  1, 0.0f,  128.0f);
+	transmit_header();
 
 	while (1) {
 		capture();
-//		do_io();
 
 		position = argmax(picture, 128);
-		// if the new argmax is too far from the previous argmax, use the previous argmax
-//		if (abs(new_position - last_position) > 50) {
-//			position = last_position;
-//		}
-//		else {
-//			position = new_position;
-//		}
-		set_output_track(position);
-		print_track_to_console(track);
+//		set_output_track(position);
+//		print_track_to_console(track);
 		lat_err = 64 - position;
+		// line crossing
+		if (position - old_position > 50) {
+			position = old_position;
+		} else if (position - old_position < -50) {
+			position = old_position;
+		}
 		// pwm limits
 		if (duty_cycle < 55) {
 			duty_cycle = 55;
@@ -575,6 +572,7 @@ int main(void)
 		update_duty_cycle_servo(duty_cycle);
 		delay(1000);
 		//send a telemetry packet with the values of all the variables
+		do_io();
 
 		// read the ADC and see if there has been a transition
 //		read_ADC_enc();
