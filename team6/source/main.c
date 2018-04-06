@@ -7,16 +7,21 @@
 #include <stdio.h>
 
 /* Freescale includes. */
+#include "board.h"
 #include "fsl_device_registers.h"
 #include "fsl_debug_console.h"
-#include "board.h"
 #include "fsl_ftm.h"
 #include "fsl_adc16.h"
 #include "fsl_pit.h"  /* periodic interrupt timer */
+#include "fsl_uart.h"
 
 /* Additional inclusions. */
 #include "clock_config.h"
 #include "pin_mux.h"
+
+/* Telemetry inclusions. */
+#include "telemetry/telemetry_uart.h"
+#include "telemetry/telemetry.h"
 
 /*******************************************************************************
  * Definitions
@@ -517,6 +522,7 @@ int main(void)
 	init_board();
 	init_adc_cam();
 //	init_adc_enc();
+	init_uart();
 	init_gpio();
 	init_pit();
 	init_pwm_motor(1000, 20); //start 1khz pwm at 15% duty cycle, for motor drive
@@ -525,6 +531,13 @@ int main(void)
 	float old_lat_err = 0;
 	float lat_vel = 0;
 	int position = 10; //this is the fake result of the argmax over the camera frame
+	uint8_t motor_pwm = 20; //set value for telemetry
+
+	//telemetry - see frdmk64f_telemetry folder for detailed comments
+	register_telemetry_variable("uint", "time", "Time", "ms", (uint32_t*) &systime,  1, 0,  0.0);
+	register_telemetry_variable("float", "motor", "Motor PWM", "Percent DC", (uint32_t*) &motor_pwm,  1, 0.0f,  0.5f);
+	register_telemetry_variable("uint", "linescan", "Linescan", "ADC", (uint32_t*) &picture,  128, 0.0f,  0.0f);
+	transmit_header();
 
 	while (1) {
 		capture();
@@ -549,6 +562,7 @@ int main(void)
 		duty_cycle = (uint8_t) 75 -kp*lat_err-kd*lat_vel;
 		update_duty_cycle_servo(duty_cycle);
 		delay(1000);
+		do_io(); //send a telemetry packet with the values of all the variables
 
 		//line scan checkoff code
 //		duty_cycle = (uint8_t) 100 - 50*position/128;

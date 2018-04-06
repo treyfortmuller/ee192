@@ -37,8 +37,6 @@ extern "C" {
  */
 void BOARD_InitBootPins(void);
 
-#define SOPT5_UART0TXSRC_UART_TX 0x00u /*!<@brief UART 0 transmit data source select: UART0_TX pin */
-
 /*! @name PORTE26 (number 33), J2[1]/D12[4]/LEDRGB_GREEN
   @{ */
 #define BOARD_INITPINS_LED_GREEN_PERIPHERAL GPIOE                  /*!<@brief Device name: GPIOE */
@@ -132,28 +130,6 @@ void BOARD_InitBootPins(void);
 #define BOARD_INITPINS_TMR_1588_0_LABEL "J1[2]"     /*!<@brief Label */
 #define BOARD_INITPINS_TMR_1588_0_NAME "TMR_1588_0" /*!<@brief Identifier name */
                                                     /* @} */
-
-/*! @name PORTD7 (number 100), J6[7]/RF_WIFI_MISO
-  @{ */
-#define BOARD_INITPINS_WIFI_MISO_PERIPHERAL UART0           /*!<@brief Device name: UART0 */
-#define BOARD_INITPINS_WIFI_MISO_SIGNAL TX                  /*!<@brief UART0 signal: TX */
-#define BOARD_INITPINS_WIFI_MISO_PORT PORTD                 /*!<@brief PORT device name: PORTD */
-#define BOARD_INITPINS_WIFI_MISO_PIN 7U                     /*!<@brief PORTD pin index: 7 */
-#define BOARD_INITPINS_WIFI_MISO_PIN_NAME UART0_TX          /*!<@brief Pin name */
-#define BOARD_INITPINS_WIFI_MISO_LABEL "J6[7]/RF_WIFI_MISO" /*!<@brief Label */
-#define BOARD_INITPINS_WIFI_MISO_NAME "WIFI_MISO"           /*!<@brief Identifier name */
-                                                            /* @} */
-
-/*! @name PORTD6 (number 99), J6[6]/RF_WIFI_MOSI
-  @{ */
-#define BOARD_INITPINS_WIFI_MOSI_PERIPHERAL UART0           /*!<@brief Device name: UART0 */
-#define BOARD_INITPINS_WIFI_MOSI_SIGNAL RX                  /*!<@brief UART0 signal: RX */
-#define BOARD_INITPINS_WIFI_MOSI_PORT PORTD                 /*!<@brief PORT device name: PORTD */
-#define BOARD_INITPINS_WIFI_MOSI_PIN 6U                     /*!<@brief PORTD pin index: 6 */
-#define BOARD_INITPINS_WIFI_MOSI_PIN_NAME UART0_RX          /*!<@brief Pin name */
-#define BOARD_INITPINS_WIFI_MOSI_LABEL "J6[6]/RF_WIFI_MOSI" /*!<@brief Label */
-#define BOARD_INITPINS_WIFI_MOSI_NAME "WIFI_MOSI"           /*!<@brief Identifier name */
-                                                            /* @} */
 
 /*!
  * @brief Configures pin routing and optionally pin electrical features.
