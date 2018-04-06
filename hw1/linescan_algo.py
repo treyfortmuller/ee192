@@ -14,6 +14,7 @@
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
+
 # import scipy.ndimage as ndi  # useful for 1d filtering functions
 plt.close("all")   # try to close all open figs
 
@@ -72,8 +73,6 @@ def plot_gray(fig, camera_data):
   fig.pcolorfast(x_mesh, y_mesh, data_mesh,
       cmap='gray', vmin=INTENSITY_MIN, vmax=INTENSITY_MAX,
       interpolation='None')
-
-
 
 # inputs:
 # linescans - An array of length n where each element is an array of length 128. Represents n frames of linescan data.
@@ -157,14 +156,20 @@ ax = plt.subplot(1, 1, 1)
 #plot_gray(ax, linescans[0:1000])  # plot smaller range if hard too see
 plot_gray(ax, linescans) 
 
+# the derivative filter for each frame
+der_data = []
+frame_number = 50
 
-# plot of velocities
-# fig = plt.figure(figsize = (8, 4))
-# # fig.set_size_inches(13, 4)
-# fig.suptitle("velocities %s\n" % (filename))   
-# plt.xlabel('time [ms]')
-# plt.ylabel('velocity (m/s)')  
-# plt.plot(times,velocities)
+for i in range(0, CAMERA_LENGTH-1):
+	der_data.append(linescans[frame_number][i] - linescans[frame_number][i+1])
+
+# plot of the derivative filter
+fig = plt.figure(figsize = (8, 4))
+# fig.set_size_inches(13, 4)
+fig.suptitle("track center %s\n" % (filename))   
+plt.xlabel('time [ms]')
+plt.ylabel('track center')  
+plt.plot(der_data)
 
 # plot of found track position 
 fig = plt.figure(figsize = (8, 4))
@@ -190,7 +195,6 @@ plt.xlabel('time [ms]')
 plt.ylabel('crosses')  
 plt.plot(times,cross_found_list)
 
-### EXPERIMENTING WITH DIFFERENCING ###
 # plot of an individual frame (raw data)
 
 frame_number = 50
