@@ -75,6 +75,10 @@ extern "C" {
 #define ADC16_2_IRQHANDLER ADC1_IRQHandler
 /* Alias for GPIOA peripheral */
 #define GPIO_5_GPIO GPIOA
+/* Definition of peripheral ID */
+#define UART_2_PERIPHERAL UART4
+/* Definition of the clock source frequency */
+#define UART_2_CLOCK_SOURCE CLOCK_GetFreq(UART4_CLK_SRC)
 
 /***********************************************************************************************************************
  * Global variables
@@ -89,6 +93,7 @@ extern const ftm_config_t FTM_3_config;
 extern const adc16_config_t ADC16_2_config;
 extern const adc16_channel_mux_mode_t ADC16_2_muxMode;
 extern const adc16_hardware_average_mode_t ADC16_2_hardwareAverageMode;
+extern const uart_config_t UART_2_config;
 
 /***********************************************************************************************************************
  * Initialization functions

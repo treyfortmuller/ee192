@@ -519,7 +519,7 @@ int main(void)
 //	init_adc_enc();
 	init_gpio();
 	init_pit();
-	init_pwm_motor(1000, 15); //start 1khz pwm at 15% duty cycle, for motor drive
+	init_pwm_motor(1000, 20); //start 1khz pwm at 15% duty cycle, for motor drive
 	init_pwm_servo(500, 75); //start 500hz pwm at 75% duty cycle, for servo steer
 	float lat_err = 0;
 	float old_lat_err = 0;
@@ -590,33 +590,5 @@ void PIT0_IRQHandler(void) //clear interrupt flag
 {
     PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
     pitIsrFlag = true;
-//    if (systime % 261 == 0){
-//    	SI_HIGH; //set SI to 1
-//    } else if (systime % 261 == 1) {
-//    	CLK_HIGH; //set CLK to 1
-//    } else if (systime % 261 == 2) {
-//    	SI_LOW; //set SI to 0
-//    } else if (systime % 261 > 2 && systime % 261 < 259) {
-//    	for (int i = 3, j = 0; i < 259 && j < 127; i++, j++) {
-//			if (i % 2 == 1) { //odd (first, since i starts at 3)
-//				CLK_HIGH;
-//			} else if (i % 2 == 2) { //even
-//				read_ADC_cam();
-//				picture[j] = g_Adc16ConversionValue; //store data in array
-//				CLK_LOW;
-//			}
-//    	}
-//    } else if (systime % 261 == 259) {
-//    	CLK_HIGH;
-//    } else if (systime % 261 == 260) {
-//    	CLK_LOW;
-//    }
-//	if (systime % 4 == 1) {
-//		update_duty_cycle_servo(95U); //turn right
-//	} else if (systime % 4 == 3) {
-//		update_duty_cycle_servo(55U); //turn left
-//	} else if (systime == 30) {
-//		update_duty_cycle_motor(0U); //stop after 150 seconds
-//	}
     systime++; /* hopefully atomic operation */
 }
