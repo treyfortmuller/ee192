@@ -163,39 +163,91 @@ frame_number = 50
 print(np.average(linescans[frame_number]))
 
 for i in range(0, CAMERA_LENGTH-1):
-	der_data.append(linescans[frame_number][i] - linescans[frame_number][i+1])
+	der_data.append(linescans[frame_number][i+1] - linescans[frame_number][i])
 
 # plot of the derivative filter
 fig = plt.figure(figsize = (8, 4))
 # fig.set_size_inches(13, 4)
-fig.suptitle("track center %s\n" % (filename))   
-plt.xlabel('time [ms]')
-plt.ylabel('track center')  
+fig.suptitle("derivative data %s\n" % (filename))   
+plt.xlabel('pixels')
+plt.ylabel('d(intensity)/d(pixels)')  
 plt.plot(der_data)
 
-# plot of found track position 
+# create sample data
+sample_der_data = []
+for i in range(0, CAMERA_LENGTH-1):
+  if (i == 64-5):
+    sample_der_data.append(50)
+  elif (i == 64+5):
+    sample_der_data.append(-50)
+  else:
+    sample_der_data.append(0)
+
+# create sample data
+sample_data = []
+for i in range(0, CAMERA_LENGTH-1):
+  if (i == 64):
+    sample_data.append(50)
+  else:
+    sample_data.append(0)
+
+# sample_der_data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 30, 50, 30, 5, -5, -30, -50, -30, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+corr = np.correlate(der_data, sample_der_data, 'same')
+# print(corr)
+
+frame_corr = np.correlate(linescans[frame_number], sample_data, 'same')
+
+# plot of the correlation between a frame and the sample data
 fig = plt.figure(figsize = (8, 4))
 # fig.set_size_inches(13, 4)
-fig.suptitle("track center %s\n" % (filename))   
-plt.xlabel('time [ms]')
-plt.ylabel('track center')  
-plt.plot(times,track_center_list)
+fig.suptitle("NO DERIVATIVE %s\n" % (filename))   
+plt.xlabel('something')
+plt.ylabel('something')  
+plt.plot(frame_corr)
+
+# plot of the correlation between a frame and the sample data
+fig = plt.figure(figsize = (8, 4))
+# fig.set_size_inches(13, 4)
+fig.suptitle("SAMPLE DERIVATIVE %s\n" % (filename))   
+plt.xlabel('something')
+plt.ylabel('something')  
+plt.plot(sample_der_data)
+
+# plot of the correlation between a frame and the sample data
+fig = plt.figure(figsize = (8, 4))
+# fig.set_size_inches(13, 4)
+fig.suptitle("correlation data %s\n" % (filename))   
+plt.xlabel('pixels')
+plt.ylabel('correlation')  
+plt.plot(corr)
+
+print(np.argmax(linescans[frame_number]))
+print(np.argmax(corr))
+
+# # plot of found track position 
+# fig = plt.figure(figsize = (8, 4))
+# # fig.set_size_inches(13, 4)
+# fig.suptitle("track center %s\n" % (filename))   
+# plt.xlabel('time [ms]')
+# plt.ylabel('track center')  
+# plt.plot(times,track_center_list)
 
 # plot of track detection
-fig = plt.figure(figsize = (8, 4))
-# fig.set_size_inches(13, 4)
-fig.suptitle("track detection %s\n" % (filename))   
-plt.xlabel('time [ms]')
-plt.ylabel('track detection')  
-plt.plot(times,track_found_list)
+# fig = plt.figure(figsize = (8, 4))
+# # fig.set_size_inches(13, 4)
+# fig.suptitle("track detection %s\n" % (filename))   
+# plt.xlabel('time [ms]')
+# plt.ylabel('track detection')  
+# plt.plot(times,track_found_list)
 
-# plot of crosses found
-fig = plt.figure(figsize = (8, 4))
-# fig.set_size_inches(13, 4)
-fig.suptitle("crosses found %s\n" % (filename))   
-plt.xlabel('time [ms]')
-plt.ylabel('crosses')  
-plt.plot(times,cross_found_list)
+# # plot of crosses found
+# fig = plt.figure(figsize = (8, 4))
+# # fig.set_size_inches(13, 4)
+# fig.suptitle("crosses found %s\n" % (filename))   
+# plt.xlabel('time [ms]')
+# plt.ylabel('crosses')  
+# plt.plot(times,cross_found_list)
 
 # plot of an individual frame (raw data)
 
