@@ -13,13 +13,10 @@
 #include "fsl_ftm.h"
 #include "fsl_adc16.h"
 #include "fsl_pit.h"  /* periodic interrupt timer */
-#include "fsl_uart.h"
 
 /* Additional inclusions. */
 #include "clock_config.h"
 #include "pin_mux.h"
-#include "telemetry/telemetry_uart.h"
-#include "telemetry/telemetry.h"
 
 /*******************************************************************************
  * Definitions
@@ -76,12 +73,6 @@
 #define PIT_IRQ_ID PIT0_IRQn
 #define PIT_SOURCE_CLOCK CLOCK_GetFreq(kCLOCK_BusClk)
 volatile bool pitIsrFlag = false;
-
-/* Get source clock for PIT driver for control loop*/
-#define PIT_IRQ_ID_CTRL PIT1_IRQn
-#define PIT_SOURCE_CLOCK_CTRL CLOCK_GetFreq(kCLOCK_BusClk)
-volatile bool pitIsrFlag_ctrl = false;
-
 
 /* ADC definitions s*/
 // for line scan camera
@@ -144,7 +135,16 @@ void set_output_track(int pos);
  ******************************************************************************/
 volatile bool ftmIsrFlag = false;
 volatile uint8_t duty_cycle = 1U;
+volatile uint8_t duty_cycle_motor = 1U;
+volatile uint8_t motor_min = 1U; // the minimum pwm percentage for the motor
+volatile uint8_t motor_max = 1U; // the maximum pwm percentage for the motor
 volatile uint32_t systime = 0; // systime updated very 100 us = 4 days ==> NEED OVERFLOW protection
+
+/* PWM duty cycle percentage limits */
+//const int MOTOR_DUTY_MIN = 0; // for motor drive
+//const int MOTOR_DUTY_MAX = 40;
+//const int SERVO_DUTY_MIN = 65; // for servo steering
+//const int SERVO_DUTY_MAX = 85;
 
 // ADC variables
 volatile bool g_Adc16ConversionDoneFlag = false;
@@ -167,10 +167,6 @@ int transition_count = 0; // the number of counts detected in the time step
 int picture[128];
 int Max, Min;
 char track[frame_width]; // the telemetry output representation of the detected track
-float lat_err = 0;
-float old_lat_err = 0;
-float lat_vel = 0;
-int position = 64; //this is the fake result of the argmax over the camera frame
 
 // PD controller variables
 const float dt = 0.010; //PD timestep in SECONDS (50 Hz)
@@ -435,32 +431,14 @@ void init_pit()
 	/* Initialize pit module */
 	PIT_Init(PIT, &pitConfig);
 	/* Set timer period for channel 0 */
-	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(100U, PIT_SOURCE_CLOCK)); // 100us timing
+
+	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(1U, PIT_SOURCE_CLOCK)); // 50us timing
 	/* Enable timer interrupts for channel 0 */
 	PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
 	/* Enable at the NVIC */
 	EnableIRQ(PIT_IRQ_ID);
 	/* Start channel 0 */
 	PIT_StartTimer(PIT, kPIT_Chnl_0);
-}
-
-void init_pit_ctrl()
-{
-   /* Structure of initialize PIT */
-	pit_config_t pitConfigCtrl;
-
-	/* start periodic interrupt timer- should be in its own file */
-	PIT_GetDefaultConfig(&pitConfigCtrl);
-	/* Initialize pit module */
-	PIT_Init(PIT, &pitConfigCtrl);
-	/* Set timer period for channel 1 */
-	PIT_SetTimerPeriod(PIT, kPIT_Chnl_1, USEC_TO_COUNT(5000U, PIT_SOURCE_CLOCK_CTRL)); // 5ms timing
-	/* Enable timer interrupts for channel 1 */
-	PIT_EnableInterrupts(PIT, kPIT_Chnl_1, kPIT_TimerInterruptEnable);
-	/* Enable at the NVIC */
-	EnableIRQ(PIT_IRQ_ID_CTRL);
-	/* Start channel 1 */
-	PIT_StartTimer(PIT, kPIT_Chnl_1);
 }
 
 float getVelocity(int transition_count) {
@@ -483,23 +461,23 @@ void capture()
 {
     int i;
     SI_HIGH; //set SI to 1
-    delay(5);
+    delay(1); // was delay(200);
     CLK_HIGH; //set CLK to 1
-    delay(5);
+    delay(200); // was delay(200);
     SI_LOW; //set SI to 0
     for (i = 0; i < 127; i++) { //loop for 128 pixels
     	CLK_LOW;
-    	delay(1);
     	CLK_HIGH;
+//        delay(1);
         read_ADC_cam();
         picture[i] = g_Adc16ConversionValue_cam; //store data in array
-        CLK_LOW;
-        delay(1);
+//        CLK_LOW;
+//        delay(1);
     }
     CLK_HIGH;
     delay(1);
     CLK_LOW;
-    delay(5);
+    delay(1);
 }
 
 int argmax(int arr[], size_t size)
@@ -543,22 +521,93 @@ int main(void)
 	init_adc_cam();
 //	init_adc_enc();
 	init_gpio();
-	init_uart();
-	init_pwm_motor(1000, 19); //start 1khz pwm at 15% duty cycle, for motor drive
-	init_pwm_servo(500, 75); //start 500hz pwm at 75% duty cycle, for servo steer
 	init_pit();
-	init_pit_ctrl();
-	float motor_pwm = 19.0f;
+	init_pwm_motor(1000, 18); //start 1khz pwm at 18% duty cycle, for motor drive
+	init_pwm_servo(500, 75); //start 500hz pwm at 75% duty cycle, for servo steer
+	float lat_err = 0;
+	float old_lat_err = 0;
+	float lat_vel = 0;
+	int position = 64; //this is the fake result of the argmax over the camera frame
 
-	register_telemetry_variable("uint", "time", "Time", "us", (uint32_t*) &systime,  1, 0.0f,  0.0f);
-	register_telemetry_variable("float", "motor", "Motor PWM", "Percent DC", (uint32_t*) &motor_pwm,  1, 0.0f,  40.0f);
-	register_telemetry_variable("uint", "linescan", "Linescan", "ADC", (uint32_t*) &picture,  128, 0.0f,  0.0f);
-
-	//Tell the plotter what variables to plot. Send this once before the main loop
-	transmit_header();
+	// init the motor min and max values for interpolating based on servo pwm percentages
+	motor_min = 18;
+	motor_max = 18;
 
 	while (1) {
-		do_io();
+		capture();
+		position = argmax(picture, 128);
+		set_output_track(position);
+		print_track_to_console(track);
+		lat_err = 64 - position;
+		// pwm limits
+		if (duty_cycle < 55) {
+			duty_cycle = 55;
+		} else if (duty_cycle > 95) {
+			duty_cycle = 95;
+		}
+		// controller
+		if (dt > 0.0) {
+			lat_vel = (lat_err - old_lat_err)/dt;
+		} else {
+			lat_vel = 0.0;
+		}
+		old_lat_err = lat_err;
+		// update pwm
+		duty_cycle = (uint8_t) 75 - kp*lat_err - kd*lat_vel;
+
+		update_duty_cycle_servo(duty_cycle);
+
+		// motor pwm command linearly interpolated from servo pwm
+		if (duty_cycle < 75) {
+			duty_cycle_motor = motor_max - (motor_max - motor_min)*((75-duty_cycle)/20); // 20 is the range of servo pwm
+		}
+		else {
+			duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-75)/20); // 20 is the range of the servo pwm
+		}
+		update_duty_cycle_motor(duty_cycle_motor); // update the duty cycle of the motor
+
+		// the statified slow/fast motor pwm based on servo pwm percentage
+//		if (duty_cycle > 80) { // if we're turning right?
+//			update_duty_cycle_motor(16); // update the duty cycle of the motor to be slower
+//		}
+//		else if (duty_cycle < 70) { // if we're turning left?
+//			update_duty_cycle_motor(16); // update the duty cycle of the motor to be slower
+//		}
+//		else { // we're not turning
+//			update_duty_cycle_motor(18); // update the duty cycle to be full speed
+//		}
+
+		delay(500); // was delay(1000);
+
+		//line scan checkoff code
+//		duty_cycle = (uint8_t) 100 - 50*position/128;
+//		update_duty_cycle_servo(duty_cycle);
+
+		// read the ADC and see if there has been a transition
+//		read_ADC_enc();
+//		analog_voltage = (float)(g_Adc16ConversionValue * (VREF_BRD / SE_12BIT)); // get the analog voltage off that pin
+//		if (analog_voltage > ADC_high_thresh) {
+//			ADC_state = 1; // the ADC detected a high signal off the optical encoder
+//		}
+//		else {
+//			ADC_state = 0; // the ADC detected a low signal off the optical encoder
+//		}
+//
+//		if (prev_ADC_state != ADC_state) {
+//			// there has been a transition from high to low or low to high, increment the counter
+//			transition_count++;
+//		}
+//
+//		prev_ADC_state = ADC_state;
+//
+//		// at a frequency of 20Hz, return the number of transitions detected on the ADC to get velocity estimate
+//		if (systime*100 % 5 == 0) {
+//			systime = 0; // reset the systime as to prevent overflow
+//			currVel = getVelocity(transition_count); // get the velocity estimate from the number of transitions in 0.05s (20Hz) to use in our velocity controller
+//			PRINTF("\r\nVelocity: %0.3f\r\n", currVel);
+//			transition_count = 0; // reset the transition counter
+//		}
+
 	}
 }
 
@@ -570,34 +619,33 @@ void PIT0_IRQHandler(void) //clear interrupt flag
 {
     PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
     pitIsrFlag = true;
-
+//    if (systime % 261 == 0){
+//    	SI_HIGH; //set SI to 1
+//    } else if (systime % 261 == 1) {
+//    	CLK_HIGH; //set CLK to 1
+//    } else if (systime % 261 == 2) {
+//    	SI_LOW; //set SI to 0
+//    } else if (systime % 261 > 2 && systime % 261 < 259) {
+//    	for (int i = 3, j = 0; i < 259 && j < 127; i++, j++) {
+//			if (i % 2 == 1) { //odd (first, since i starts at 3)
+//				CLK_HIGH;
+//			} else if (i % 2 == 2) { //even
+//				read_ADC_cam();
+//				picture[j] = g_Adc16ConversionValue; //store data in array
+//				CLK_LOW;
+//			}
+//    	}
+//    } else if (systime % 261 == 259) {
+//    	CLK_HIGH;
+//    } else if (systime % 261 == 260) {
+//    	CLK_LOW;
+//    }
+//	if (systime % 4 == 1) {
+//		update_duty_cycle_servo(95U); //turn right
+//	} else if (systime % 4 == 3) {
+//		update_duty_cycle_servo(55U); //turn left
+//	} else if (systime == 30) {
+//		update_duty_cycle_motor(0U); //stop after 150 seconds
+//	}
     systime++; /* hopefully atomic operation */
-}
-
-void PIT1_IRQHandler(void) //clear interrupt flag
-{
-    PIT_ClearStatusFlags(PIT, kPIT_Chnl_1, kPIT_TimerFlag);
-    pitIsrFlag_ctrl = true;
-
-	capture();
-	position = argmax(picture, 128);
-//	set_output_track(position);
-//	print_track_to_console(track);
-	lat_err = 64 - position;
-	// pwm limits
-	if (duty_cycle < 55) {
-		duty_cycle = 55;
-	} else if (duty_cycle > 95) {
-		duty_cycle = 95;
-	}
-	// controller
-	if (dt > 0.0) {
-		lat_vel = (lat_err - old_lat_err)/dt;
-	} else {
-		lat_vel = 0.0;
-	}
-	old_lat_err = lat_err;
-	// update pwm
-	duty_cycle = (uint8_t) 75 - kp*lat_err - kd*lat_vel;
-	update_duty_cycle_servo(duty_cycle);
 }
