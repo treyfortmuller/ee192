@@ -461,7 +461,7 @@ void capture()
 {
     int i;
     SI_HIGH; //set SI to 1
-    delay(1); // was delay(200);
+//    delay(1); // was delay(200);
     CLK_HIGH; //set CLK to 1
     delay(200); // was delay(200);
     SI_LOW; //set SI to 0
@@ -475,9 +475,9 @@ void capture()
 //        delay(1);
     }
     CLK_HIGH;
-    delay(1);
+//    delay(1);
     CLK_LOW;
-    delay(1);
+//    delay(1);
 }
 
 int argmax(int arr[], size_t size)
@@ -522,16 +522,16 @@ int main(void)
 //	init_adc_enc();
 	init_gpio();
 	init_pit();
-	init_pwm_motor(1000, 18); //start 1khz pwm at 18% duty cycle, for motor drive
-	init_pwm_servo(500, 75); //start 500hz pwm at 75% duty cycle, for servo steer
+	init_pwm_motor(1000, 17); //start 1khz pwm at 18% duty cycle, for motor drive
+	init_pwm_servo(100, 15); //start 500hz pwm at 75% duty cycle, for servo steer
 	float lat_err = 0;
 	float old_lat_err = 0;
 	float lat_vel = 0;
 	int position = 64; //this is the fake result of the argmax over the camera frame
 
 	// init the motor min and max values for interpolating based on servo pwm percentages
-	motor_min = 18;
-	motor_max = 18;
+	motor_min = 17;
+	motor_max = 15;
 
 	while (1) {
 		capture();
@@ -540,10 +540,10 @@ int main(void)
 		print_track_to_console(track);
 		lat_err = 64 - position;
 		// pwm limits
-		if (duty_cycle < 55) {
-			duty_cycle = 55;
-		} else if (duty_cycle > 95) {
-			duty_cycle = 95;
+		if (duty_cycle < 5) {
+			duty_cycle = 5;
+		} else if (duty_cycle > 25) {
+			duty_cycle = 25;
 		}
 		// controller
 		if (dt > 0.0) {
@@ -553,20 +553,20 @@ int main(void)
 		}
 		old_lat_err = lat_err;
 		// update pwm
-		duty_cycle = (uint8_t) 75 - kp*lat_err - kd*lat_vel;
+		duty_cycle = (uint8_t) 15 - kp*lat_err - kd*lat_vel;
 
 		update_duty_cycle_servo(duty_cycle);
 
 		// motor pwm command linearly interpolated from servo pwm
-		if (duty_cycle < 75) {
-			duty_cycle_motor = motor_max - (motor_max - motor_min)*((75-duty_cycle)/20); // 20 is the range of servo pwm
+		if (duty_cycle < 15) {
+			duty_cycle_motor = motor_max - (motor_max - motor_min)*((15-duty_cycle)/20); // 20 is the range of servo pwm
 		}
 		else {
-			duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-75)/20); // 20 is the range of the servo pwm
+			duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-15)/20); // 20 is the range of the servo pwm
 		}
 		update_duty_cycle_motor(duty_cycle_motor); // update the duty cycle of the motor
 
-		// the statified slow/fast motor pwm based on servo pwm percentage
+		// the satisfied slow/fast motor pwm based on servo pwm percentage
 //		if (duty_cycle > 80) { // if we're turning right?
 //			update_duty_cycle_motor(16); // update the duty cycle of the motor to be slower
 //		}
@@ -578,36 +578,6 @@ int main(void)
 //		}
 
 		delay(500); // was delay(1000);
-
-		//line scan checkoff code
-//		duty_cycle = (uint8_t) 100 - 50*position/128;
-//		update_duty_cycle_servo(duty_cycle);
-
-		// read the ADC and see if there has been a transition
-//		read_ADC_enc();
-//		analog_voltage = (float)(g_Adc16ConversionValue * (VREF_BRD / SE_12BIT)); // get the analog voltage off that pin
-//		if (analog_voltage > ADC_high_thresh) {
-//			ADC_state = 1; // the ADC detected a high signal off the optical encoder
-//		}
-//		else {
-//			ADC_state = 0; // the ADC detected a low signal off the optical encoder
-//		}
-//
-//		if (prev_ADC_state != ADC_state) {
-//			// there has been a transition from high to low or low to high, increment the counter
-//			transition_count++;
-//		}
-//
-//		prev_ADC_state = ADC_state;
-//
-//		// at a frequency of 20Hz, return the number of transitions detected on the ADC to get velocity estimate
-//		if (systime*100 % 5 == 0) {
-//			systime = 0; // reset the systime as to prevent overflow
-//			currVel = getVelocity(transition_count); // get the velocity estimate from the number of transitions in 0.05s (20Hz) to use in our velocity controller
-//			PRINTF("\r\nVelocity: %0.3f\r\n", currVel);
-//			transition_count = 0; // reset the transition counter
-//		}
-
 	}
 }
 
@@ -619,33 +589,5 @@ void PIT0_IRQHandler(void) //clear interrupt flag
 {
     PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
     pitIsrFlag = true;
-//    if (systime % 261 == 0){
-//    	SI_HIGH; //set SI to 1
-//    } else if (systime % 261 == 1) {
-//    	CLK_HIGH; //set CLK to 1
-//    } else if (systime % 261 == 2) {
-//    	SI_LOW; //set SI to 0
-//    } else if (systime % 261 > 2 && systime % 261 < 259) {
-//    	for (int i = 3, j = 0; i < 259 && j < 127; i++, j++) {
-//			if (i % 2 == 1) { //odd (first, since i starts at 3)
-//				CLK_HIGH;
-//			} else if (i % 2 == 2) { //even
-//				read_ADC_cam();
-//				picture[j] = g_Adc16ConversionValue; //store data in array
-//				CLK_LOW;
-//			}
-//    	}
-//    } else if (systime % 261 == 259) {
-//    	CLK_HIGH;
-//    } else if (systime % 261 == 260) {
-//    	CLK_LOW;
-//    }
-//	if (systime % 4 == 1) {
-//		update_duty_cycle_servo(95U); //turn right
-//	} else if (systime % 4 == 3) {
-//		update_duty_cycle_servo(55U); //turn left
-//	} else if (systime == 30) {
-//		update_duty_cycle_motor(0U); //stop after 150 seconds
-//	}
     systime++; /* hopefully atomic operation */
 }
