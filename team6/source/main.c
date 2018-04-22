@@ -83,14 +83,6 @@ volatile bool pitIsrFlag = false;
 #define DEMO_ADC16_IRQn_CAM ADC0_IRQn
 #define DEMO_ADC16_IRQ_HANDLER_FUNC_CAM ADC0_IRQHandler
 
-// for encoder
-#define DEMO_ADC16_BASEADDR_ENC ADC1
-#define DEMO_ADC16_CHANNEL_GROUP_ENC 1U
-#define DEMO_ADC16_USER_CHANNEL_ENC 14U /* PTB10, ADC1_SE14 */
-
-#define DEMO_ADC16_IRQn_ENC ADC1_IRQn
-#define DEMO_ADC16_IRQ_HANDLER_FUNC_ENC ADC1_IRQHandler
-
 #define VREF_BRD 3.300
 #define SE_12BIT 4096.0
 
@@ -121,10 +113,8 @@ float getVelocity(int transition_count);
 
 /* Initialize ADC16 */
 static void init_adc_cam(void);
-static void init_adc_enc(void);
 static void init_board(void);
 void read_ADC_cam(void);
-void read_ADC_enc(void);
 
 /* console based output of the track */
 void print_track_to_console(char track[5]);
@@ -140,28 +130,10 @@ volatile uint8_t motor_min = 1U; // the minimum pwm percentage for the motor
 volatile uint8_t motor_max = 1U; // the maximum pwm percentage for the motor
 volatile uint32_t systime = 0; // systime updated very 100 us = 4 days ==> NEED OVERFLOW protection
 
-/* PWM duty cycle percentage limits */
-//const int MOTOR_DUTY_MIN = 0; // for motor drive
-//const int MOTOR_DUTY_MAX = 40;
-//const int SERVO_DUTY_MIN = 65; // for servo steering
-//const int SERVO_DUTY_MAX = 85;
-
 // ADC variables
 volatile bool g_Adc16ConversionDoneFlag = false;
 volatile uint32_t g_Adc16ConversionValue_cam = 0;
-volatile uint32_t g_Adc16ConversionValue_enc = 0;
 adc16_channel_config_t g_adc16ChannelConfigStruct_cam;
-adc16_channel_config_t g_adc16ChannelConfigStruct_enc;
-
-// Velocity control variables
-const float ADC_high_thresh = 2.5f; // the cutoff for a "high" signal from the optical encoder in volts
-const float Kp = 0.30; // proportional gain
-const float desVel = 3.0; // desired velocity [m/s]
-float analog_voltage = 0;  // the voltage detected by the ADC from the optical encoder
-float currVel = 0.0f; // current velocity
-int ADC_state = 0; // whether the ADC is in a high or low state so we can count transitions
-int prev_ADC_state = 0; // the previous loop's ADC state for comparison
-int transition_count = 0; // the number of counts detected in the time step
 
 // Line scan variables
 int picture[128];
@@ -171,7 +143,7 @@ char track[frame_width]; // the telemetry output representation of the detected 
 // PD controller variables
 const float dt = 0.010; //PD timestep in SECONDS (50 Hz)
 const float kp = 0.75; //Proportional Gain
-const float kd = 0.125; //Derivative Gain
+const float kd = 0.0; //Derivative Gain
 
 /*******************************************************************************
  * Code
@@ -353,74 +325,6 @@ void DEMO_ADC16_IRQ_HANDLER_FUNC_CAM(void)
 #endif
 }
 
-static void init_adc_enc(void)
-{
-	EnableIRQ(DEMO_ADC16_IRQn_ENC);
-    adc16_config_t adc16ConfigStruct;
-
-    /* Configure the ADC16. All the default values follow, uncomment and adjust them if need be*/
-    /*
-     * adc16ConfigStruct.referenceVoltageSource = kADC16_ReferenceVoltageSourceVref;
-     * adc16ConfigStruct.clockSource = kADC16_ClockSourceAsynchronousClock;
-     * adc16ConfigStruct.enableAsynchronousClock = true;
-     * adc16ConfigStruct.clockDivider = kADC16_ClockDivider8;
-     * adc16ConfigStruct.resolution = kADC16_ResolutionSE12Bit;
-     * adc16ConfigStruct.longSampleMode = kADC16_LongSampleDisabled;
-     * adc16ConfigStruct.enableHighSpeed = false;
-     * adc16ConfigStruct.enableLowPower = false;
-     * adc16ConfigStruct.enableContinuousConversion = false;
-     */
-
-    ADC16_GetDefaultConfig(&adc16ConfigStruct);
-#if defined(BOARD_ADC_USE_ALT_VREF)
-    adc16ConfigStruct.referenceVoltageSource = kADC16_ReferenceVoltageSourceValt;
-#endif
-    ADC16_Init(DEMO_ADC16_BASEADDR_ENC, &adc16ConfigStruct);
-
-    /* Make sure the software trigger is used. */
-    ADC16_EnableHardwareTrigger(DEMO_ADC16_BASEADDR_ENC, false);
-#if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && FSL_FEATURE_ADC16_HAS_CALIBRATION
-    if (kStatus_Success == ADC16_DoAutoCalibration(DEMO_ADC16_BASEADDR_ENC))
-    {
-        PRINTF("\r\nADC16_DoAutoCalibration() Done.");
-    }
-    else
-    {
-        PRINTF("ADC16_DoAutoCalibration() Failed.\r\n");
-    }
-#endif /* FSL_FEATURE_ADC16_HAS_CALIBRATION */
-
-    /* Prepare ADC channel setting */
-    g_adc16ChannelConfigStruct_enc.channelNumber = DEMO_ADC16_USER_CHANNEL_ENC;
-    g_adc16ChannelConfigStruct_enc.enableInterruptOnConversionCompleted = true;
-
-#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-    g_adc16ChannelConfigStruct_enc.enableDifferentialConversion = false;
-#endif /* FSL_FEATURE_ADC16_HAS_DIFF_MODE */
-}
-
-void read_ADC_enc(void){
-	g_Adc16ConversionDoneFlag = false;
-	ADC16_SetChannelConfig(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC, &g_adc16ChannelConfigStruct_enc);
-
-	//Block until the ADC Conversion is finished
-	 while (!g_Adc16ConversionDoneFlag)
-	 {
-	 }
-}
-
-void DEMO_ADC16_IRQ_HANDLER_FUNC_ENC(void)
-{
-    g_Adc16ConversionDoneFlag = true;
-    /* Read conversion result to clear the conversion completed flag. */
-    g_Adc16ConversionValue_enc = ADC16_GetChannelConversionValue(DEMO_ADC16_BASEADDR_ENC, DEMO_ADC16_CHANNEL_GROUP_ENC);
-    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
-      exception return operation might vector to incorrect interrupt */
-#if defined __CORTEX_M && (__CORTEX_M == 4U)
-    __DSB();
-#endif
-}
-
 void init_pit()
 {
    /* Structure of initialize PIT */
@@ -432,7 +336,7 @@ void init_pit()
 	PIT_Init(PIT, &pitConfig);
 	/* Set timer period for channel 0 */
 
-	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(1U, PIT_SOURCE_CLOCK)); // 50us timing
+	PIT_SetTimerPeriod(PIT, kPIT_Chnl_0, USEC_TO_COUNT(100U, PIT_SOURCE_CLOCK)); //100us timing
 	/* Enable timer interrupts for channel 0 */
 	PIT_EnableInterrupts(PIT, kPIT_Chnl_0, kPIT_TimerInterruptEnable);
 	/* Enable at the NVIC */
@@ -441,43 +345,21 @@ void init_pit()
 	PIT_StartTimer(PIT, kPIT_Chnl_0);
 }
 
-float getVelocity(int transition_count) {
-	// number of transitions from high to low signal off the ADC per 0.05s into vehicle velocity
-	// this function outputs a float, vehicle velocity to be used in the velocity controller
-
-	// float counts_per_sec = transition_count / 0.05; // transitions per second
-	// float revs_per_second = counts_per_sec / 4; // depending on the light and dark surfaces on the gearing
-
-	// gear ratio is 1.65:1
-	// wheel diameter is ~56mm = 0.056 m
-
-	// distance per tick = pi * diameter / (ticks per rev * gear ratio)
-	// velocity = distance per tick / time elapsed
-	float velocity = (0.056*3.14159265358979323846/(4*1.65))/0.05; // in [m/s]
-	return velocity;
-}
-
 void capture()
 {
     int i;
     SI_HIGH; //set SI to 1
-//    delay(1); // was delay(200);
     CLK_HIGH; //set CLK to 1
-    delay(200); // was delay(200);
+    delay(2); // was delay(200);
     SI_LOW; //set SI to 0
     for (i = 0; i < 127; i++) { //loop for 128 pixels
     	CLK_LOW;
     	CLK_HIGH;
-//        delay(1);
         read_ADC_cam();
         picture[i] = g_Adc16ConversionValue_cam; //store data in array
-//        CLK_LOW;
-//        delay(1);
     }
     CLK_HIGH;
-//    delay(1);
     CLK_LOW;
-//    delay(1);
 }
 
 int argmax(int arr[], size_t size)
@@ -496,30 +378,10 @@ int argmax(int arr[], size_t size)
 	return temp;
 }
 
-void set_output_track(int line_pos){
-	for (int i = 0; i <= frame_width; i++) {
-		if (i == line_pos) {
-			track[i] = '|';
-		}
-		else {
-			track[i] = '-';
-		}
-	}
-}
-
-void print_track_to_console(char track[5]){
-	PRINTF("\r\n");
-	for (int i = 0; i <= frame_width; i++) {
-		PRINTF("%c", track[i]);
-	}
-	PRINTF("\r\n");
-}
-
 int main(void)
 {
 	init_board();
 	init_adc_cam();
-//	init_adc_enc();
 	init_gpio();
 	init_pit();
 	init_pwm_motor(1000, 17); //start 1khz pwm at 18% duty cycle, for motor drive
@@ -536,8 +398,6 @@ int main(void)
 	while (1) {
 		capture();
 		position = argmax(picture, 128);
-		set_output_track(position);
-		print_track_to_console(track);
 		lat_err = 64 - position;
 		// pwm limits
 		if (duty_cycle < 5) {
@@ -558,26 +418,26 @@ int main(void)
 		update_duty_cycle_servo(duty_cycle);
 
 		// motor pwm command linearly interpolated from servo pwm
-		if (duty_cycle < 15) {
-			duty_cycle_motor = motor_max - (motor_max - motor_min)*((15-duty_cycle)/20); // 20 is the range of servo pwm
-		}
-		else {
-			duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-15)/20); // 20 is the range of the servo pwm
-		}
-		update_duty_cycle_motor(duty_cycle_motor); // update the duty cycle of the motor
+//		if (duty_cycle < 15) {
+//			duty_cycle_motor = motor_max - (motor_max - motor_min)*((15-duty_cycle)/20); // 20 is the range of servo pwm
+//		}
+//		else {
+//			duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-15)/20); // 20 is the range of the servo pwm
+//		}
+//		update_duty_cycle_motor(duty_cycle_motor); // update the duty cycle of the motor
 
 		// the satisfied slow/fast motor pwm based on servo pwm percentage
 //		if (duty_cycle > 80) { // if we're turning right?
-//			update_duty_cycle_motor(16); // update the duty cycle of the motor to be slower
-//		}
+//			update_duty_cycle_motor(motor_min); //
+//		}update the duty cycle of the motor to be slower
 //		else if (duty_cycle < 70) { // if we're turning left?
-//			update_duty_cycle_motor(16); // update the duty cycle of the motor to be slower
+//			update_duty_cycle_motor(motor_min); // update the duty cycle of the motor to be slower
 //		}
 //		else { // we're not turning
-//			update_duty_cycle_motor(18); // update the duty cycle to be full speed
+//			update_duty_cycle_motor(motor_max); // update the duty cycle to be full speed
 //		}
 
-		delay(500); // was delay(1000);
+		delay(1);
 	}
 }
 
