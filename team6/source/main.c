@@ -139,6 +139,10 @@ adc16_channel_config_t g_adc16ChannelConfigStruct_cam;
 int picture[128];
 int Max, Min;
 char track[frame_width]; // the telemetry output representation of the detected track
+float lat_err = 0;
+float old_lat_err = 0;
+float lat_vel = 0;
+int position = 64; //this is the fake result of the argmax over the camera frame
 
 // PD controller variables
 const float dt = 0.010; //PD timestep in SECONDS (50 Hz)
@@ -350,7 +354,7 @@ void capture()
     int i;
     SI_HIGH; //set SI to 1
     CLK_HIGH; //set CLK to 1
-    delay(2); // was delay(200);
+    delay(2);
     SI_LOW; //set SI to 0
     for (i = 0; i < 127; i++) { //loop for 128 pixels
     	CLK_LOW;
@@ -386,10 +390,6 @@ int main(void)
 	init_pit();
 	init_pwm_motor(1000, 17); //start 1khz pwm at 18% duty cycle, for motor drive
 	init_pwm_servo(100, 15); //start 500hz pwm at 75% duty cycle, for servo steer
-	float lat_err = 0;
-	float old_lat_err = 0;
-	float lat_vel = 0;
-	int position = 64; //this is the fake result of the argmax over the camera frame
 
 	// init the motor min and max values for interpolating based on servo pwm percentages
 	motor_min = 17;
@@ -397,47 +397,6 @@ int main(void)
 
 	while (1) {
 		capture();
-		position = argmax(picture, 128);
-		lat_err = 64 - position;
-		// pwm limits
-		if (duty_cycle < 5) {
-			duty_cycle = 5;
-		} else if (duty_cycle > 25) {
-			duty_cycle = 25;
-		}
-		// controller
-		if (dt > 0.0) {
-			lat_vel = (lat_err - old_lat_err)/dt;
-		} else {
-			lat_vel = 0.0;
-		}
-		old_lat_err = lat_err;
-		// update pwm
-		duty_cycle = (uint8_t) 15 - kp*lat_err - kd*lat_vel;
-
-		update_duty_cycle_servo(duty_cycle);
-
-		// motor pwm command linearly interpolated from servo pwm
-//		if (duty_cycle < 15) {
-//			duty_cycle_motor = motor_max - (motor_max - motor_min)*((15-duty_cycle)/20); // 20 is the range of servo pwm
-//		}
-//		else {
-//			duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-15)/20); // 20 is the range of the servo pwm
-//		}
-//		update_duty_cycle_motor(duty_cycle_motor); // update the duty cycle of the motor
-
-		// the satisfied slow/fast motor pwm based on servo pwm percentage
-//		if (duty_cycle > 80) { // if we're turning right?
-//			update_duty_cycle_motor(motor_min); //
-//		}update the duty cycle of the motor to be slower
-//		else if (duty_cycle < 70) { // if we're turning left?
-//			update_duty_cycle_motor(motor_min); // update the duty cycle of the motor to be slower
-//		}
-//		else { // we're not turning
-//			update_duty_cycle_motor(motor_max); // update the duty cycle to be full speed
-//		}
-
-		delay(1);
 	}
 }
 
@@ -449,5 +408,47 @@ void PIT0_IRQHandler(void) //clear interrupt flag
 {
     PIT_ClearStatusFlags(PIT, kPIT_Chnl_0, kPIT_TimerFlag);
     pitIsrFlag = true;
+
+    if (systime % 100 == 0) {
+    	position = argmax(picture, 128);
+    	lat_err = 64 - position;
+    	// controller
+    	if (dt > 0.0) {
+    		lat_vel = (lat_err - old_lat_err)/dt;
+    	} else {
+    		lat_vel = 0.0;
+    	}
+    	old_lat_err = lat_err;
+    	// update pwm
+    	duty_cycle = (uint8_t) 15 - kp*lat_err - kd*lat_vel;
+    	// pwm limits
+    	if (duty_cycle < 5) {
+    		duty_cycle = 5;
+    	} else if (duty_cycle > 25) {
+    		duty_cycle = 25;
+    	}
+    	update_duty_cycle_servo(duty_cycle);
+
+    	// motor pwm command linearly interpolated from servo pwm
+    	if (duty_cycle < 15) {
+    		duty_cycle_motor = motor_max - (motor_max - motor_min)*((15-duty_cycle)/20); // 20 is the range of servo pwm
+    	}
+    	else {
+    		duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-15)/20); // 20 is the range of the servo pwm
+    	}
+    	update_duty_cycle_motor(duty_cycle_motor); // update the duty cycle of the motor
+
+//    	 the satisfied slow/fast motor pwm based on servo pwm percentage
+//    		if (duty_cycle > 80) { // if we're turning right?
+//    			update_duty_cycle_motor(motor_min); //
+//    		}update the duty cycle of the motor to be slower
+//    		else if (duty_cycle < 70) { // if we're turning left?
+//    			update_duty_cycle_motor(motor_min); // update the duty cycle of the motor to be slower
+//    		}
+//    		else { // we're not turning
+//    			update_duty_cycle_motor(motor_max); // update the duty cycle to be full speed
+//    		}
+    }
+
     systime++; /* hopefully atomic operation */
 }
