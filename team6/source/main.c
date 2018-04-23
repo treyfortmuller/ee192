@@ -116,10 +116,6 @@ static void init_adc_cam(void);
 static void init_board(void);
 void read_ADC_cam(void);
 
-/* console based output of the track */
-void print_track_to_console(char track[5]);
-void set_output_track(int pos);
-
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -137,7 +133,6 @@ adc16_channel_config_t g_adc16ChannelConfigStruct_cam;
 
 // Line scan variables
 int picture[128];
-int Max, Min;
 char track[frame_width]; // the telemetry output representation of the detected track
 float lat_err = 0;
 float old_lat_err = 0;
@@ -146,8 +141,8 @@ int position = 64; //this is the fake result of the argmax over the camera frame
 
 // PD controller variables
 const float dt = 0.010; //PD timestep in SECONDS (50 Hz)
-const float kp = 0.05; //Proportional Gain
-const float kd = 0.0; //Derivative Gain
+const float kp = 0.25; //Proportional Gain
+const float kd = 0.05; //Derivative Gain
 
 /*******************************************************************************
  * Code
@@ -354,7 +349,7 @@ void capture()
     int i;
     SI_HIGH; //set SI to 1
     CLK_HIGH; //set CLK to 1
-    delay(1);
+    delay(2);
     SI_LOW; //set SI to 0
     for (i = 0; i < 127; i++) { //loop for 128 pixels
     	CLK_LOW;
@@ -388,12 +383,12 @@ int main(void)
 	init_adc_cam();
 	init_gpio();
 	init_pit();
-	init_pwm_motor(1000, 4); //start 1khz pwm at 18% duty cycle, for motor drive
-	init_pwm_servo(100, 15); //start 500hz pwm at 75% duty cycle, for servo steer
+	init_pwm_motor(5000, 17); //start 1khz pwm at 18% duty cycle, for motor drive
+	init_pwm_servo(100, 14); //start 500hz pwm at 75% duty cycle, for servo steer
 
 	// init the motor min and max values for interpolating based on servo pwm percentages
-	motor_min = 3;
-	motor_max = 4;
+	motor_min = 17;
+	motor_max = 17;
 
 	while (1) {
 		capture();
@@ -420,21 +415,21 @@ void PIT0_IRQHandler(void) //clear interrupt flag
     	}
     	old_lat_err = lat_err;
     	// update pwm
-    	duty_cycle = (uint8_t) 15 + kp*lat_err + kd*lat_vel;
+    	duty_cycle = (uint8_t) 14 - kp*lat_err - kd*lat_vel;
     	// pwm limits
-    	if (duty_cycle < 12) {
-    		duty_cycle = 12;
-    	} else if (duty_cycle > 18) {
-    		duty_cycle = 18;
+    	if (duty_cycle < 6) {
+    		duty_cycle = 6;
+    	} else if (duty_cycle > 24) {
+    		duty_cycle = 24;
     	}
     	update_duty_cycle_servo(duty_cycle);
 
     	// motor pwm command linearly interpolated from servo pwm
-    	if (duty_cycle < 15) {
-    		duty_cycle_motor = motor_max - (motor_max - motor_min)*((15-duty_cycle)/3); // 3 is the range of servo pwm
+    	if (duty_cycle < 14) {
+    		duty_cycle_motor = motor_max - (motor_max - motor_min)*((14-duty_cycle)/8); // 10 is the range of servo pwm
     	}
     	else {
-    		duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-15)/3); // 3 is the range of the servo pwm
+    		duty_cycle_motor = motor_max - (motor_max - motor_min)*((duty_cycle-14)/10); // 10 is the range of the servo pwm
     	}
     	update_duty_cycle_motor(duty_cycle_motor); // update the duty cycle of the motor
 
