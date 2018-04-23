@@ -142,7 +142,7 @@ int position = 64; //this is the fake result of the argmax over the camera frame
 // PD controller variables
 const float dt = 0.010; //PD timestep in SECONDS (50 Hz)
 const float kp = 0.25; //Proportional Gain
-const float kd = 0.05; //Derivative Gain
+const float kd = 0.025; //Derivative Gain
 
 /*******************************************************************************
  * Code
@@ -347,13 +347,13 @@ void init_pit()
 void capture()
 {
     int i;
-    SI_HIGH; //set SI to 1
-    CLK_HIGH; //set CLK to 1
-    delay(2);
-    SI_LOW; //set SI to 0
+    SI_HIGH;
+    CLK_HIGH;
+    SI_LOW;
     for (i = 0; i < 127; i++) { //loop for 128 pixels
     	CLK_LOW;
     	CLK_HIGH;
+    	delay(1); //exposure delay
         read_ADC_cam();
         picture[i] = g_Adc16ConversionValue_cam; //store data in array
     }
