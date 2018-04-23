@@ -383,12 +383,12 @@ int main(void)
 	init_adc_cam();
 	init_gpio();
 	init_pit();
-	init_pwm_motor(5000, 17); //start 1khz pwm at 18% duty cycle, for motor drive
+	init_pwm_motor(5000, 19); //start 1khz pwm at 18% duty cycle, for motor drive
 	init_pwm_servo(100, 14); //start 500hz pwm at 75% duty cycle, for servo steer
 
 	// init the motor min and max values for interpolating based on servo pwm percentages
-	motor_min = 17;
-	motor_max = 17;
+	motor_min = 19;
+	motor_max = 19;
 
 	while (1) {
 		capture();
@@ -417,8 +417,8 @@ void PIT0_IRQHandler(void) //clear interrupt flag
     	// update pwm
     	duty_cycle = (uint8_t) 14 - kp*lat_err - kd*lat_vel;
     	// pwm limits
-    	if (duty_cycle < 6) {
-    		duty_cycle = 6;
+    	if (duty_cycle < 7) {
+    		duty_cycle = 7;
     	} else if (duty_cycle > 24) {
     		duty_cycle = 24;
     	}
