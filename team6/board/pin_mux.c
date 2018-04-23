@@ -55,6 +55,8 @@ BOARD_InitPins:
   - {pin_num: '90', peripheral: GPIOC, signal: 'GPIO, 16', pin_signal: PTC16/UART3_RX/ENET0_1588_TMR0/FB_CS5_b/FB_TSIZ1/FB_BE23_16_BLS15_8_b}
   - {pin_num: '86', peripheral: UART4, signal: RX, pin_signal: PTC14/UART4_RX/FB_AD25}
   - {pin_num: '87', peripheral: UART4, signal: TX, pin_signal: PTC15/UART4_TX/FB_AD24}
+  - {pin_num: '44', peripheral: UART0, signal: TX, pin_signal: PTA14/SPI0_PCS0/UART0_TX/RMII0_CRS_DV/MII0_RXDV/I2C2_SCL/I2S0_RX_BCLK/I2S0_TXD1}
+  - {pin_num: '45', peripheral: UART0, signal: RX, pin_signal: PTA15/SPI0_SCK/UART0_RX/RMII0_TXEN/MII0_TXEN/I2S0_RXD0}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -80,6 +82,12 @@ void BOARD_InitPins(void)
 
     /* PORTA1 (pin 35) is configured as PTA1 */
     PORT_SetPinMux(PORTA, 1U, kPORT_MuxAsGpio);
+
+    /* PORTA14 (pin 44) is configured as UART0_TX */
+    PORT_SetPinMux(BOARD_INITPINS_RMII0_CRS_DV_PORT, BOARD_INITPINS_RMII0_CRS_DV_PIN, kPORT_MuxAlt3);
+
+    /* PORTA15 (pin 45) is configured as UART0_RX */
+    PORT_SetPinMux(BOARD_INITPINS_RMII0_TXEN_PORT, BOARD_INITPINS_RMII0_TXEN_PIN, kPORT_MuxAlt3);
 
     /* PORTB10 (pin 58) is configured as ADC1_SE14 */
     PORT_SetPinMux(PORTB, 10U, kPORT_PinDisabledOrAnalog);
@@ -128,6 +136,13 @@ void BOARD_InitPins(void)
 
     /* PORTE26 (pin 33) is configured as PTE26 */
     PORT_SetPinMux(BOARD_INITPINS_LED_GREEN_PORT, BOARD_INITPINS_LED_GREEN_PIN, kPORT_MuxAsGpio);
+
+    SIM->SOPT5 = ((SIM->SOPT5 &
+                   /* Mask bits to zero which are setting */
+                   (~(SIM_SOPT5_UART0TXSRC_MASK)))
+
+                  /* UART 0 transmit data source select: UART0_TX pin. */
+                  | SIM_SOPT5_UART0TXSRC(SOPT5_UART0TXSRC_UART_TX));
 }
 /***********************************************************************************************************************
  * EOF

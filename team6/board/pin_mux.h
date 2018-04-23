@@ -37,6 +37,8 @@ extern "C" {
  */
 void BOARD_InitBootPins(void);
 
+#define SOPT5_UART0TXSRC_UART_TX 0x00u /*!<@brief UART 0 transmit data source select: UART0_TX pin */
+
 /*! @name PORTE26 (number 33), J2[1]/D12[4]/LEDRGB_GREEN
   @{ */
 #define BOARD_INITPINS_LED_GREEN_PERIPHERAL GPIOE                  /*!<@brief Device name: GPIOE */
@@ -130,6 +132,28 @@ void BOARD_InitBootPins(void);
 #define BOARD_INITPINS_TMR_1588_0_LABEL "J1[2]"     /*!<@brief Label */
 #define BOARD_INITPINS_TMR_1588_0_NAME "TMR_1588_0" /*!<@brief Identifier name */
                                                     /* @} */
+
+/*! @name PORTA14 (number 44), U13[15]/RMII0_CRS_DV
+  @{ */
+#define BOARD_INITPINS_RMII0_CRS_DV_PERIPHERAL UART0             /*!<@brief Device name: UART0 */
+#define BOARD_INITPINS_RMII0_CRS_DV_SIGNAL TX                    /*!<@brief UART0 signal: TX */
+#define BOARD_INITPINS_RMII0_CRS_DV_PORT PORTA                   /*!<@brief PORT device name: PORTA */
+#define BOARD_INITPINS_RMII0_CRS_DV_PIN 14U                      /*!<@brief PORTA pin index: 14 */
+#define BOARD_INITPINS_RMII0_CRS_DV_PIN_NAME UART0_TX            /*!<@brief Pin name */
+#define BOARD_INITPINS_RMII0_CRS_DV_LABEL "U13[15]/RMII0_CRS_DV" /*!<@brief Label */
+#define BOARD_INITPINS_RMII0_CRS_DV_NAME "RMII0_CRS_DV"          /*!<@brief Identifier name */
+                                                                 /* @} */
+
+/*! @name PORTA15 (number 45), U13[19]/RMII0_TXEN
+  @{ */
+#define BOARD_INITPINS_RMII0_TXEN_PERIPHERAL UART0           /*!<@brief Device name: UART0 */
+#define BOARD_INITPINS_RMII0_TXEN_SIGNAL RX                  /*!<@brief UART0 signal: RX */
+#define BOARD_INITPINS_RMII0_TXEN_PORT PORTA                 /*!<@brief PORT device name: PORTA */
+#define BOARD_INITPINS_RMII0_TXEN_PIN 15U                    /*!<@brief PORTA pin index: 15 */
+#define BOARD_INITPINS_RMII0_TXEN_PIN_NAME UART0_RX          /*!<@brief Pin name */
+#define BOARD_INITPINS_RMII0_TXEN_LABEL "U13[19]/RMII0_TXEN" /*!<@brief Label */
+#define BOARD_INITPINS_RMII0_TXEN_NAME "RMII0_TXEN"          /*!<@brief Identifier name */
+                                                             /* @} */
 
 /*!
  * @brief Configures pin routing and optionally pin electrical features.
