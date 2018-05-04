@@ -38,14 +38,25 @@ void BOARD_InitBootPins(void)
 BOARD_InitPins:
 - options: {callFromInitBoot: 'true', coreID: core0, enableClock: 'true'}
 - pin_list:
-  - {pin_num: '62', peripheral: UART0, signal: RX, pin_signal: PTB16/SPI1_SOUT/UART0_RX/FTM_CLKIN0/FB_AD17/EWM_IN}
-  - {pin_num: '63', peripheral: UART0, signal: TX, pin_signal: PTB17/SPI1_SIN/UART0_TX/FTM_CLKIN1/FB_AD16/EWM_OUT_b}
   - {pin_num: '33', peripheral: GPIOE, signal: 'GPIO, 26', pin_signal: PTE26/ENET_1588_CLKIN/UART4_CTS_b/RTC_CLKOUT/USB_CLKIN}
   - {pin_num: '67', peripheral: GPIOB, signal: 'GPIO, 21', pin_signal: PTB21/SPI2_SCK/FB_AD30/CMP1_OUT}
   - {pin_num: '68', peripheral: GPIOB, signal: 'GPIO, 22', pin_signal: PTB22/SPI2_SOUT/FB_AD29/CMP2_OUT}
   - {pin_num: '71', peripheral: FTM0, signal: 'CH, 0', pin_signal: ADC0_SE15/PTC1/LLWU_P6/SPI0_PCS3/UART1_RTS_b/FTM0_CH0/FB_AD13/I2S0_TXD0}
   - {pin_num: '69', peripheral: GPIOB, signal: 'GPIO, 23', pin_signal: PTB23/SPI2_SIN/SPI0_PCS5/FB_AD28}
   - {pin_num: '57', peripheral: GPIOB, signal: 'GPIO, 9', pin_signal: PTB9/SPI1_PCS1/UART3_CTS_b/FB_AD20}
+  - {pin_num: '65', peripheral: FTM2, signal: 'CH, 1', pin_signal: PTB19/CAN0_RX/FTM2_CH1/I2S0_TX_FS/FB_OE_b/FTM2_QD_PHB}
+  - {pin_num: '76', peripheral: FTM0, signal: 'CH, 3', pin_signal: PTC4/LLWU_P8/SPI0_PCS0/UART1_TX/FTM0_CH3/FB_AD11/CMP1_OUT}
+  - {pin_num: '55', peripheral: ADC0, signal: 'SE, 12', pin_signal: ADC0_SE12/PTB2/I2C0_SCL/UART0_RTS_b/ENET0_1588_TMR0/FTM0_FLT3}
+  - {pin_num: '58', peripheral: ADC1, signal: 'SE, 14', pin_signal: ADC1_SE14/PTB10/SPI1_PCS0/UART3_RX/FB_AD19/FTM0_FLT1}
+  - {pin_num: '56', peripheral: ADC0, signal: 'SE, 13', pin_signal: ADC0_SE13/PTB3/I2C0_SDA/UART0_CTS_b/UART0_COL_b/ENET0_1588_TMR1/FTM0_FLT0}
+  - {pin_num: '96', peripheral: FTM3, signal: 'CH, 3', pin_signal: PTD3/SPI0_SIN/UART2_TX/FTM3_CH3/FB_AD3/I2C0_SDA}
+  - {pin_num: '35', peripheral: GPIOA, signal: 'GPIO, 1', pin_signal: PTA1/UART0_RX/FTM0_CH6/JTAG_TDI/EZP_DI}
+  - {pin_num: '95', peripheral: GPIOD, signal: 'GPIO, 2', pin_signal: PTD2/LLWU_P13/SPI0_SOUT/UART2_RX/FTM3_CH2/FB_AD4/I2C0_SCL}
+  - {pin_num: '90', peripheral: GPIOC, signal: 'GPIO, 16', pin_signal: PTC16/UART3_RX/ENET0_1588_TMR0/FB_CS5_b/FB_TSIZ1/FB_BE23_16_BLS15_8_b}
+  - {pin_num: '86', peripheral: UART4, signal: RX, pin_signal: PTC14/UART4_RX/FB_AD25}
+  - {pin_num: '87', peripheral: UART4, signal: TX, pin_signal: PTC15/UART4_TX/FB_AD24}
+  - {pin_num: '44', peripheral: UART0, signal: TX, pin_signal: PTA14/SPI0_PCS0/UART0_TX/RMII0_CRS_DV/MII0_RXDV/I2C2_SCL/I2S0_RX_BCLK/I2S0_TXD1}
+  - {pin_num: '45', peripheral: UART0, signal: RX, pin_signal: PTA15/SPI0_SCK/UART0_RX/RMII0_TXEN/MII0_TXEN/I2S0_RXD0}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -58,18 +69,34 @@ BOARD_InitPins:
  * END ****************************************************************************************************************/
 void BOARD_InitPins(void)
 {
+    /* Port A Clock Gate Control: Clock enabled */
+    CLOCK_EnableClock(kCLOCK_PortA);
     /* Port B Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortB);
     /* Port C Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortC);
+    /* Port D Clock Gate Control: Clock enabled */
+    CLOCK_EnableClock(kCLOCK_PortD);
     /* Port E Clock Gate Control: Clock enabled */
     CLOCK_EnableClock(kCLOCK_PortE);
 
-    /* PORTB16 (pin 62) is configured as UART0_RX */
-    PORT_SetPinMux(BOARD_INITPINS_DEBUG_UART_RX_PORT, BOARD_INITPINS_DEBUG_UART_RX_PIN, kPORT_MuxAlt3);
+    /* PORTA1 (pin 35) is configured as PTA1 */
+    PORT_SetPinMux(PORTA, 1U, kPORT_MuxAsGpio);
 
-    /* PORTB17 (pin 63) is configured as UART0_TX */
-    PORT_SetPinMux(BOARD_INITPINS_DEBUG_UART_TX_PORT, BOARD_INITPINS_DEBUG_UART_TX_PIN, kPORT_MuxAlt3);
+    /* PORTA14 (pin 44) is configured as UART0_TX */
+    PORT_SetPinMux(BOARD_INITPINS_RMII0_CRS_DV_PORT, BOARD_INITPINS_RMII0_CRS_DV_PIN, kPORT_MuxAlt3);
+
+    /* PORTA15 (pin 45) is configured as UART0_RX */
+    PORT_SetPinMux(BOARD_INITPINS_RMII0_TXEN_PORT, BOARD_INITPINS_RMII0_TXEN_PIN, kPORT_MuxAlt3);
+
+    /* PORTB10 (pin 58) is configured as ADC1_SE14 */
+    PORT_SetPinMux(PORTB, 10U, kPORT_PinDisabledOrAnalog);
+
+    /* PORTB19 (pin 65) is configured as FTM2_CH1 */
+    PORT_SetPinMux(PORTB, 19U, kPORT_MuxAlt3);
+
+    /* PORTB2 (pin 55) is configured as ADC0_SE12 */
+    PORT_SetPinMux(BOARD_INITPINS_ADC0_SE12_PORT, BOARD_INITPINS_ADC0_SE12_PIN, kPORT_PinDisabledOrAnalog);
 
     /* PORTB21 (pin 67) is configured as PTB21 */
     PORT_SetPinMux(BOARD_INITPINS_LED_BLUE_PORT, BOARD_INITPINS_LED_BLUE_PIN, kPORT_MuxAsGpio);
@@ -80,11 +107,32 @@ void BOARD_InitPins(void)
     /* PORTB23 (pin 69) is configured as PTB23 */
     PORT_SetPinMux(PORTB, 23U, kPORT_MuxAsGpio);
 
+    /* PORTB3 (pin 56) is configured as ADC0_SE13 */
+    PORT_SetPinMux(PORTB, 3U, kPORT_PinDisabledOrAnalog);
+
     /* PORTB9 (pin 57) is configured as PTB9 */
     PORT_SetPinMux(PORTB, 9U, kPORT_MuxAsGpio);
 
     /* PORTC1 (pin 71) is configured as FTM0_CH0 */
     PORT_SetPinMux(PORTC, 1U, kPORT_MuxAlt4);
+
+    /* PORTC14 (pin 86) is configured as UART4_RX */
+    PORT_SetPinMux(PORTC, 14U, kPORT_MuxAlt3);
+
+    /* PORTC15 (pin 87) is configured as UART4_TX */
+    PORT_SetPinMux(PORTC, 15U, kPORT_MuxAlt3);
+
+    /* PORTC16 (pin 90) is configured as PTC16 */
+    PORT_SetPinMux(BOARD_INITPINS_TMR_1588_0_PORT, BOARD_INITPINS_TMR_1588_0_PIN, kPORT_MuxAsGpio);
+
+    /* PORTC4 (pin 76) is configured as FTM0_CH3 */
+    PORT_SetPinMux(PORTC, 4U, kPORT_MuxAlt4);
+
+    /* PORTD2 (pin 95) is configured as PTD2 */
+    PORT_SetPinMux(BOARD_INITPINS_UART2_RX_PORT, BOARD_INITPINS_UART2_RX_PIN, kPORT_MuxAsGpio);
+
+    /* PORTD3 (pin 96) is configured as FTM3_CH3 */
+    PORT_SetPinMux(BOARD_INITPINS_UART2_TX_PORT, BOARD_INITPINS_UART2_TX_PIN, kPORT_MuxAlt4);
 
     /* PORTE26 (pin 33) is configured as PTE26 */
     PORT_SetPinMux(BOARD_INITPINS_LED_GREEN_PORT, BOARD_INITPINS_LED_GREEN_PIN, kPORT_MuxAsGpio);

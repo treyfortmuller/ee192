@@ -39,28 +39,6 @@ void BOARD_InitBootPins(void);
 
 #define SOPT5_UART0TXSRC_UART_TX 0x00u /*!<@brief UART 0 transmit data source select: UART0_TX pin */
 
-/*! @name PORTB16 (number 62), U7[4]/UART0_RX
-  @{ */
-#define BOARD_INITPINS_DEBUG_UART_RX_PERIPHERAL UART0       /*!<@brief Device name: UART0 */
-#define BOARD_INITPINS_DEBUG_UART_RX_SIGNAL RX              /*!<@brief UART0 signal: RX */
-#define BOARD_INITPINS_DEBUG_UART_RX_PORT PORTB             /*!<@brief PORT device name: PORTB */
-#define BOARD_INITPINS_DEBUG_UART_RX_PIN 16U                /*!<@brief PORTB pin index: 16 */
-#define BOARD_INITPINS_DEBUG_UART_RX_PIN_NAME UART0_RX      /*!<@brief Pin name */
-#define BOARD_INITPINS_DEBUG_UART_RX_LABEL "U7[4]/UART0_RX" /*!<@brief Label */
-#define BOARD_INITPINS_DEBUG_UART_RX_NAME "DEBUG_UART_RX"   /*!<@brief Identifier name */
-                                                            /* @} */
-
-/*! @name PORTB17 (number 63), U10[1]/UART0_TX
-  @{ */
-#define BOARD_INITPINS_DEBUG_UART_TX_PERIPHERAL UART0        /*!<@brief Device name: UART0 */
-#define BOARD_INITPINS_DEBUG_UART_TX_SIGNAL TX               /*!<@brief UART0 signal: TX */
-#define BOARD_INITPINS_DEBUG_UART_TX_PORT PORTB              /*!<@brief PORT device name: PORTB */
-#define BOARD_INITPINS_DEBUG_UART_TX_PIN 17U                 /*!<@brief PORTB pin index: 17 */
-#define BOARD_INITPINS_DEBUG_UART_TX_PIN_NAME UART0_TX       /*!<@brief Pin name */
-#define BOARD_INITPINS_DEBUG_UART_TX_LABEL "U10[1]/UART0_TX" /*!<@brief Label */
-#define BOARD_INITPINS_DEBUG_UART_TX_NAME "DEBUG_UART_TX"    /*!<@brief Identifier name */
-                                                             /* @} */
-
 /*! @name PORTE26 (number 33), J2[1]/D12[4]/LEDRGB_GREEN
   @{ */
 #define BOARD_INITPINS_LED_GREEN_PERIPHERAL GPIOE                  /*!<@brief Device name: GPIOE */
@@ -102,6 +80,80 @@ void BOARD_InitBootPins(void);
 #define BOARD_INITPINS_LED_RED_LABEL "D12[1]/LEDRGB_RED" /*!<@brief Label */
 #define BOARD_INITPINS_LED_RED_NAME "LED_RED"            /*!<@brief Identifier name */
                                                          /* @} */
+
+/*! @name PORTB2 (number 55), J4[2]
+  @{ */
+#define BOARD_INITPINS_ADC0_SE12_PERIPHERAL ADC0    /*!<@brief Device name: ADC0 */
+#define BOARD_INITPINS_ADC0_SE12_SIGNAL SE          /*!<@brief ADC0 signal: SE */
+#define BOARD_INITPINS_ADC0_SE12_PORT PORTB         /*!<@brief PORT device name: PORTB */
+#define BOARD_INITPINS_ADC0_SE12_PIN 2U             /*!<@brief PORTB pin index: 2 */
+#define BOARD_INITPINS_ADC0_SE12_CHANNEL 12         /*!<@brief ADC0 SE channel: 12 */
+#define BOARD_INITPINS_ADC0_SE12_PIN_NAME ADC0_SE12 /*!<@brief Pin name */
+#define BOARD_INITPINS_ADC0_SE12_LABEL "J4[2]"      /*!<@brief Label */
+#define BOARD_INITPINS_ADC0_SE12_NAME "ADC0_SE12"   /*!<@brief Identifier name */
+                                                    /* @} */
+
+/*! @name PORTD3 (number 96), J2[10]
+  @{ */
+#define BOARD_INITPINS_UART2_TX_PERIPHERAL FTM3   /*!<@brief Device name: FTM3 */
+#define BOARD_INITPINS_UART2_TX_SIGNAL CH         /*!<@brief FTM3 signal: CH */
+#define BOARD_INITPINS_UART2_TX_PORT PORTD        /*!<@brief PORT device name: PORTD */
+#define BOARD_INITPINS_UART2_TX_PIN 3U            /*!<@brief PORTD pin index: 3 */
+#define BOARD_INITPINS_UART2_TX_CHANNEL 3         /*!<@brief FTM3 channel: 3 */
+#define BOARD_INITPINS_UART2_TX_PIN_NAME FTM3_CH3 /*!<@brief Pin name */
+#define BOARD_INITPINS_UART2_TX_LABEL "J2[10]"    /*!<@brief Label */
+#define BOARD_INITPINS_UART2_TX_NAME "UART2_TX"   /*!<@brief Identifier name */
+                                                  /* @} */
+
+/*! @name PORTD2 (number 95), J2[8]
+  @{ */
+#define BOARD_INITPINS_UART2_RX_PERIPHERAL GPIOD /*!<@brief Device name: GPIOD */
+#define BOARD_INITPINS_UART2_RX_SIGNAL GPIO      /*!<@brief GPIOD signal: GPIO */
+#define BOARD_INITPINS_UART2_RX_GPIO GPIOD       /*!<@brief GPIO device name: GPIOD */
+#define BOARD_INITPINS_UART2_RX_GPIO_PIN 2U      /*!<@brief PORTD pin index: 2 */
+#define BOARD_INITPINS_UART2_RX_PORT PORTD       /*!<@brief PORT device name: PORTD */
+#define BOARD_INITPINS_UART2_RX_PIN 2U           /*!<@brief PORTD pin index: 2 */
+#define BOARD_INITPINS_UART2_RX_CHANNEL 2        /*!<@brief GPIOD GPIO channel: 2 */
+#define BOARD_INITPINS_UART2_RX_PIN_NAME PTD2    /*!<@brief Pin name */
+#define BOARD_INITPINS_UART2_RX_LABEL "J2[8]"    /*!<@brief Label */
+#define BOARD_INITPINS_UART2_RX_NAME "UART2_RX"  /*!<@brief Identifier name */
+                                                 /* @} */
+
+/*! @name PORTC16 (number 90), J1[2]
+  @{ */
+#define BOARD_INITPINS_TMR_1588_0_PERIPHERAL GPIOC  /*!<@brief Device name: GPIOC */
+#define BOARD_INITPINS_TMR_1588_0_SIGNAL GPIO       /*!<@brief GPIOC signal: GPIO */
+#define BOARD_INITPINS_TMR_1588_0_GPIO GPIOC        /*!<@brief GPIO device name: GPIOC */
+#define BOARD_INITPINS_TMR_1588_0_GPIO_PIN 16U      /*!<@brief PORTC pin index: 16 */
+#define BOARD_INITPINS_TMR_1588_0_PORT PORTC        /*!<@brief PORT device name: PORTC */
+#define BOARD_INITPINS_TMR_1588_0_PIN 16U           /*!<@brief PORTC pin index: 16 */
+#define BOARD_INITPINS_TMR_1588_0_CHANNEL 16        /*!<@brief GPIOC GPIO channel: 16 */
+#define BOARD_INITPINS_TMR_1588_0_PIN_NAME PTC16    /*!<@brief Pin name */
+#define BOARD_INITPINS_TMR_1588_0_LABEL "J1[2]"     /*!<@brief Label */
+#define BOARD_INITPINS_TMR_1588_0_NAME "TMR_1588_0" /*!<@brief Identifier name */
+                                                    /* @} */
+
+/*! @name PORTA14 (number 44), U13[15]/RMII0_CRS_DV
+  @{ */
+#define BOARD_INITPINS_RMII0_CRS_DV_PERIPHERAL UART0             /*!<@brief Device name: UART0 */
+#define BOARD_INITPINS_RMII0_CRS_DV_SIGNAL TX                    /*!<@brief UART0 signal: TX */
+#define BOARD_INITPINS_RMII0_CRS_DV_PORT PORTA                   /*!<@brief PORT device name: PORTA */
+#define BOARD_INITPINS_RMII0_CRS_DV_PIN 14U                      /*!<@brief PORTA pin index: 14 */
+#define BOARD_INITPINS_RMII0_CRS_DV_PIN_NAME UART0_TX            /*!<@brief Pin name */
+#define BOARD_INITPINS_RMII0_CRS_DV_LABEL "U13[15]/RMII0_CRS_DV" /*!<@brief Label */
+#define BOARD_INITPINS_RMII0_CRS_DV_NAME "RMII0_CRS_DV"          /*!<@brief Identifier name */
+                                                                 /* @} */
+
+/*! @name PORTA15 (number 45), U13[19]/RMII0_TXEN
+  @{ */
+#define BOARD_INITPINS_RMII0_TXEN_PERIPHERAL UART0           /*!<@brief Device name: UART0 */
+#define BOARD_INITPINS_RMII0_TXEN_SIGNAL RX                  /*!<@brief UART0 signal: RX */
+#define BOARD_INITPINS_RMII0_TXEN_PORT PORTA                 /*!<@brief PORT device name: PORTA */
+#define BOARD_INITPINS_RMII0_TXEN_PIN 15U                    /*!<@brief PORTA pin index: 15 */
+#define BOARD_INITPINS_RMII0_TXEN_PIN_NAME UART0_RX          /*!<@brief Pin name */
+#define BOARD_INITPINS_RMII0_TXEN_LABEL "U13[19]/RMII0_TXEN" /*!<@brief Label */
+#define BOARD_INITPINS_RMII0_TXEN_NAME "RMII0_TXEN"          /*!<@brief Identifier name */
+                                                             /* @} */
 
 /*!
  * @brief Configures pin routing and optionally pin electrical features.
